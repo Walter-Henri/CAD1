@@ -1,0 +1,12 @@
+{
+  "name": "mutirao",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Mapa colaborativo de problemas de bairro no Recife",
+  "scripts": {
+    "build": "node scripts/inject-env.mjs",
+    "dev": "node scripts/inject-env.mjs && npx serve .",
+    "start": "npx serve ."
+  }
+}

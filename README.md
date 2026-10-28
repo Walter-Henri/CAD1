@@ -66,4 +66,33 @@ Acesse `http://localhost:8080` (ou `8000` para Python).
 
 Os dados do usuário são salvos no `localStorage` com a chave `mutirao.v1`.  
 A preferência de tema é salva com a chave `mutirao.theme`.
-# CAD1
+
+## API do mapa (CARTO)
+
+Os tiles do mapa vêm do CARTO. Sem chave, funcionam em modo demo com limitação de taxa.  
+Para produção, obtenha uma chave gratuita em [carto.com](https://carto.com).
+
+### Localmente
+
+```bash
+# 1. Crie o arquivo de variáveis locais (não sobe pro Git)
+cp .env.example .env.local
+
+# 2. Coloque sua chave CARTO dentro do arquivo
+CARTO_API_KEY=sua_chave_aqui
+
+# 3. Suba o projeto (o script gera src/js/data/env.js automaticamente)
+npm run dev
+```
+
+### Na Vercel
+
+1. Vá em **Settings > Environment Variables** do seu projeto.  
+2. Adicione `CARTO_API_KEY` com o valor da sua chave.  
+3. Faça um novo deploy — o `buildCommand` do `vercel.json` roda `inject-env.mjs` automaticamente.
+
+> ⚠️ Nunca coloque a chave diretamente em `env.js`, `app.js` ou qualquer arquivo versionado.
+
+## Street View
+
+Cada ponto de problema exibe um botão **Street View**. Ao clicar, abre um overlay com o Street View do Google centralizado nas coordenadas do ponto, sem exigir chave de API.

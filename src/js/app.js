@@ -1,4 +1,5 @@
 (function(){
+let tileBase=null;
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -152,6 +153,7 @@ const map=L.map('map',{zoomControl:false,minZoom:11,maxZoom:18,zoomSnap:1,attrib
 L.control.zoom({position:'bottomright',zoomInTitle:'Aproximar',zoomOutTitle:'Afastar'}).addTo(map);
 map.attributionControl.setPrefix(false);
 map.attributionControl.addAttribution('Limites: ESIG/Prefeitura do Recife e IBGE · pontos de exemplo');
+setBaseTile(isDark());
 L.geoJSON(VIZINHOS,{interactive:false,style:()=>({className:'v-poly'})}).addTo(map);
 const bByName={};
 const bLayer=L.geoJSON(BAIRROS,{
@@ -238,6 +240,7 @@ function toggleTheme(){
     btn.setAttribute('title',dark?'Tema claro':'Tema escuro');
     btn.innerHTML=icon(dark?'sun':'moon');
   }
+  setBaseTile(isDark());
 }
 
 function renderTop(){
@@ -248,6 +251,16 @@ function renderTop(){
     :`<button class="btn-login" id="loginBtn">${icon('user','sm')}Entrar</button>`);
   const b=$('#avBtn')||$('#loginBtn');b.addEventListener('click',()=>go('conta'));
   $('#themeBtn').addEventListener('click',toggleTheme);
+}
+
+/* ---------- tile base CARTO ---------- */
+function setBaseTile(dark){
+  const cc='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  const style=dark?'dark_all':'voyager';
+  const key=(typeof ENV!=='undefined'&&ENV.cartoKey)?'?key='+ENV.cartoKey:'';
+  const url='https://basemaps.cartocdn.com/rastertiles/'+style+'/{z}/{x}/{y}{r}.png'+key;
+  if(tileBase){tileBase.setUrl(url);}
+  else{tileBase=L.tileLayer(url,{maxZoom:19,attribution:cc});tileBase.addTo(map);tileBase.bringToBack();}
 }
 
 /* ---------- login obrigatório para agir ---------- */
@@ -287,6 +300,21 @@ function listItem(p,extra){
 }
 function bindOpen(root){root.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openDetail(b.dataset.open)))}
 function rankPos(p){const l=all().filter(x=>x.s!=='resolvido').sort((a,b)=>apoios(b)-apoios(a));return l.findIndex(x=>x.id===p.id)+1}
+
+
+/* ---------- street view overlay ---------- */
+function openSVLayer(lat,lng,title){
+  const existing=$('#svLayer');if(existing){existing.remove();}
+  const url='https://maps.google.com/maps?q=&layer=c&cbll='+lat+','+lng+'&output=embed&hl=pt';
+  const el=document.createElement('div');
+  el.id='svLayer';el.className='sv-layer';
+  el.setAttribute('role','dialog');el.setAttribute('aria-label','Street View — '+title);
+  el.innerHTML=`<div class="sv-bar"><span class="sv-title">${icon('ext','sm')}<b>Street View</b> · ${esc(title)}</span><button class="iconbtn sv-close" id="svClose" aria-label="Fechar Street View">${icon('close')}</button></div><div class="sv-wrap"><iframe class="sv-frame" src="${url}" allowfullscreen loading="lazy" title="Street View de ${esc(title)}"></iframe></div>`;
+  document.getElementById('layer').appendChild(el);
+  el.querySelector('#svClose').addEventListener('click',()=>el.remove());
+  el.addEventListener('keydown',e=>{if(e.key==='Escape')el.remove();});
+  el.querySelector('#svClose').focus();
+}
 
 function renderPanel(){
   const v=S.view;
@@ -338,7 +366,8 @@ function vDetalhe(){
     <div class="row">
       <button class="btn sec" id="dPhoto">${icon('camera')}Enviar foto</button>
       <button class="btn sec" id="dNote">${icon('note')}Adicionar nota</button>
-      <button class="btn sec" id="dShare">${icon('share')}Compartilhar</button></div>
+      <button class="btn sec" id="dShare">${icon('share')}Compartilhar</button>
+      <button class="btn sec" id="dStreetView">${icon('ext')}Street View</button></div>
     <form id="noteForm" class="field" hidden novalidate>
       <label for="noteTxt">Sua nota</label>
       <textarea class="textarea" id="noteTxt" maxlength="280" placeholder="Ex.: Hoje choveu e a água entrou de novo."></textarea>
@@ -482,6 +511,7 @@ function bindPanel(){
   on('dPhoto','click',photo);on('dPhoto2','click',photo);
   on('dNote','click',()=>need(()=>{openDetail(p.id);const f=$('#noteForm');f.hidden=false;$('#noteTxt').focus()},'adicionar nota'));
   on('dShare','click',()=>share(p));
+  on('dStreetView','click',()=>{if(p)openSVLayer(p.lat,p.lng,p.t);});
   on('noteCancel','click',()=>{$('#noteForm').hidden=true});
   on('noteForm','submit',e=>{e.preventDefault();const t=$('#noteTxt').value.trim(),f=$('#noteForm');if(!t){f.classList.add('err');$('#noteTxt').focus();return}
     (S.notes[p.id]=S.notes[p.id]||[]).push({x:t,t:Date.now()});save();renderPanel();toast('Nota publicada.','check')});
