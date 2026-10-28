@@ -182,7 +182,9 @@ function renderMarkers(){
   cg.clearLayers();for(const k in markers)delete markers[k];
   shown().forEach(p=>{
     const m=L.marker([p.lat,p.lng],{icon:mkIcon(p,p.id===S.sel),title:`${p.t} · ${p.b}`,alt:p.t,riseOnHover:true});
-    m.on('click',()=>openDetail(p.id));markers[p.id]=m;cg.addLayer(m);
+    m.on('click',()=>openDetail(p.id));
+    if(p.id===S.lastAdded)m.on('add',()=>{const e=m.getElement();if(e){e.classList.add('new-pin');e.addEventListener('animationend',()=>e.classList.remove('new-pin'),{once:true});}});
+    markers[p.id]=m;cg.addLayer(m);
   });
   const n=shown().length;$('#countSmall').textContent=n+' pontos';
 }
@@ -192,8 +194,10 @@ function select(id){
 }
 function focusPoint(p){
   const z=Math.max(map.getZoom(),15), ll=L.latLng(p.lat,p.lng);
-  if(!isDesk()){const px=map.project(ll,z).add([0,map.getSize().y*.27]);map.setView(map.unproject(px,z),z)}
-  else map.setView(ll,z);
+  const mo=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const opts={animate:!mo,duration:0.5,easeLinearity:0.5};
+  if(!isDesk()){const px=map.project(ll,z).add([0,map.getSize().y*.27]);map.flyTo(map.unproject(px,z),z,opts);}
+  else map.flyTo(ll,z,opts);
 }
 function bairroAt(lat,lng){
   const inRing=(x,y,r)=>{let ins=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const xi=r[i][0],yi=r[i][1],xj=r[j][0],yj=r[j][1];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ins=!ins}return ins};
@@ -220,7 +224,12 @@ function go(v){
 }
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.go==='conta'&&S.view==='conta')return;go(b.dataset.go)}));
 $('#brand').addEventListener('click',()=>{go('mapa');fitRecife()});
-map.on('moveend',()=>{if(S.view==='mapa'&&isDesk())renderPanel();if(S.view==='pick')updatePick()});
+map.on('moveend',()=>{if(S.view==='mapa'&&isDesk())renderPanel();if(S.view==='pick')updatePick();});
+/* tile loading indicator */
+let _tiles=0;
+const ml=$('#mapLoader');
+map.on('tileloadstart',()=>{_tiles++;if(ml)ml.hidden=false;});
+map.on('tileload tileerror',()=>{if(--_tiles<=0){_tiles=0;if(ml)ml.hidden=true;}});
 map.on('move',()=>{if(S.view==='pick')updatePick()});
 
 
@@ -285,7 +294,13 @@ function closeModal(cancel){const sc=$('#scrim');if(sc)sc.remove();if(cancel&&mo
 let toastT=null;
 function toast(msg,ic){
   let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}
-  t.innerHTML=(ic?icon(ic,'sm'):'')+esc(msg);t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},3400);
+  t.classList.remove('toast-out');
+  t.innerHTML=(ic?icon(ic,'sm'):'')+esc(msg);t.hidden=false;
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>{
+    t.classList.add('toast-out');
+    t.addEventListener('animationend',()=>{t.hidden=true;t.classList.remove('toast-out');},{once:true});
+  },3100);
 }
 function share(p){
   const txt=`${p.t} (${p.b}). ${apoios(p)} ${apoios(p)===1?'vizinho já apoia':'vizinhos já apoiam'} no Mutirão. Você também vê isso? Entre no Mutirão e apoie para a associação levar ao vereador.`;
@@ -316,17 +331,24 @@ function openSVLayer(lat,lng,title){
   el.querySelector('#svClose').focus();
 }
 
+/* ── transição de painel ── */
+let _pTimer=null;
+function transPanel(html){
+  clearTimeout(_pTimer);
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches){panel.innerHTML=html;bindPanel();return;}
+  panel.classList.add('p-exit');
+  _pTimer=setTimeout(()=>{
+    panel.innerHTML=html;
+    panel.classList.remove('p-exit');
+    panel.classList.add('p-enter');
+    panel.addEventListener('animationend',()=>panel.classList.remove('p-enter'),{once:true});
+    bindPanel();
+  },90);
+}
 function renderPanel(){
   const v=S.view;
-  if(v==='mapa')panel.innerHTML=vMapa();
-  else if(v==='detalhe')panel.innerHTML=vDetalhe();
-  else if(v==='ranking')panel.innerHTML=vRanking();
-  else if(v==='votacao')panel.innerHTML=vVotacao();
-  else if(v==='conta')panel.innerHTML=S.user?vConta():vLogin();
-  else if(v==='adicionar')panel.innerHTML=vAdicionar();
-  else if(v==='sucesso')panel.innerHTML=vSucesso();
-  else if(v==='pick')panel.innerHTML=vMapa();
-  bindPanel();
+  const html=v==='mapa'?vMapa():v==='detalhe'?vDetalhe():v==='ranking'?vRanking():v==='votacao'?vVotacao():v==='conta'?(S.user?vConta():vLogin()):v==='adicionar'?vAdicionar():v==='sucesso'?vSucesso():vMapa();
+  transPanel(html);
 }
 
 function vMapa(){
@@ -356,8 +378,9 @@ function vDetalhe(){
       <h2>${esc(p.t)}</h2>
       <p class="sub2">${esc(p.b)} · RPA ${p.r} ${RPA[p.r]} · marcado há ${tempo(d)}</p></div>
       <button class="iconbtn" id="dClose" aria-label="Fechar">${icon('close')}</button></div>
-    <div class="gallery" aria-label="Fotos dos moradores">${ph.map(x=>`<figure class="ph-item" style="margin:0">${x.svg||`<img src="${x.img}" alt="Foto enviada por você">`}<figcaption>${esc(x.cap)}</figcaption></figure>`).join('')}
-      <button class="ph-add" id="dPhoto2">${icon('camera','lg')}Enviar foto</button></div>
+    <div>
+      <div class="gallery-hd"><h3 class="sec" style="margin:0">${icon('camera','sm')}Fotos${ph.filter(x=>x.img).length?` <span class="badge-cnt">${ph.filter(x=>x.img).length}</span>`:''}</h3></div>
+      <div class="gallery" aria-label="Fotos dos moradores">${ph.map(x=>`<figure class="ph-item" style="margin:0">${x.svg?`<div class="ph-ex">${x.svg}</div>`:`<img src="${x.img}" alt="Foto de morador" loading="lazy">`}<figcaption>${esc(x.cap)}</figcaption></figure>`).join('')}<button class="ph-add" id="dPhoto2">${icon('camera','lg')}Enviar foto</button></div></div>
     <div class="support"><span class="num">${n}</span><b>${n===1?'vizinho apoia':'vizinhos apoiam'}</b>
       <span class="sub2">${p.s==='resolvido'?'Resolvido':pos?`${pos}º no ranking do Recife`:''}${mine?' · você marcou este ponto':''}</span></div>
     ${p.s==='resolvido'?'':(mine?`<button class="btn done full" disabled>${icon('check')}Você marcou este ponto</button>`:
@@ -615,7 +638,7 @@ function choose(i,inp){
   toast(`${s.p.n}: ${all().filter(p=>p.b===s.p.n).length} pontos marcados`,'pin');
 }
 ['#q1','#q2'].forEach(sel=>{const inp=$(sel);
-  inp.addEventListener('input',()=>runSearch(inp));
+  let _sRaf=null;inp.addEventListener('input',()=>{cancelAnimationFrame(_sRaf);_sRaf=requestAnimationFrame(()=>runSearch(inp));});
   inp.addEventListener('blur',()=>setTimeout(closeSugg,120));
   inp.addEventListener('keydown',e=>{
     if(!suggBox){if(e.key==='Enter')runSearch(inp);return}
