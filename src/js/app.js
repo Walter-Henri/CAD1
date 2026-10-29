@@ -10,12 +10,12 @@ const DAY=864e5, NOW=Date.now();
 const isDesk=()=>window.matchMedia('(min-width:960px)').matches;
 
 const CATS={
-  alag:{n:'Alagamento',o:'Emlurb'},
-  barreira:{n:'Barreira',o:'Defesa Civil'},
-  buraco:{n:'Buraco',o:'Emlurb'},
-  esgoto:{n:'Esgoto e cano',o:'Compesa'},
-  lixo:{n:'Lixo e entulho',o:'Emlurb'},
-  obra:{n:'Obra parada',o:'Secretaria de Infraestrutura'}
+  alag:    {n:'Alagamento',    o:'Emlurb',                      color:'#2563EB'},
+  barreira:{n:'Barreira',      o:'Defesa Civil',                color:'#DC2626'},
+  buraco:  {n:'Buraco',        o:'Emlurb',                      color:'#D97706'},
+  esgoto:  {n:'Esgoto e cano', o:'Compesa',                     color:'#7C3AED'},
+  lixo:    {n:'Lixo e entulho',o:'Emlurb',                      color:'#059669'},
+  obra:    {n:'Obra parada',   o:'Secretaria de Infraestrutura',color:'#EA580C'}
 };
 const STATUS={
   sem:{n:'Sem resposta'},
@@ -152,31 +152,70 @@ function illus(c,v){
 const map=L.map('map',{zoomControl:false,minZoom:11,maxZoom:18,zoomSnap:1,attributionControl:true});
 L.control.zoom({position:'bottomright',zoomInTitle:'Aproximar',zoomOutTitle:'Afastar'}).addTo(map);
 map.attributionControl.setPrefix(false);
-map.attributionControl.addAttribution('Limites: ESIG/Prefeitura do Recife e IBGE · pontos de exemplo');
+map.attributionControl.addAttribution('Limites: ESIG/PCR · Riscos: Sedec/PCR');;
 setBaseTile(isDark());
 L.geoJSON(VIZINHOS,{interactive:false,style:()=>({className:'v-poly'})}).addTo(map);
 const bByName={};
 const bLayer=L.geoJSON(BAIRROS,{
-  style:f=>({className:'b-poly'+(MORRO.has(f.properties.n)?' morro':'')}),
+  style:f=>({className:'b-poly rpa-'+(f.properties.r||0)+(MORRO.has(f.properties.n)?' morro':'')}),
   onEachFeature:(f,l)=>{bByName[f.properties.n]=l;l.bindTooltip(f.properties.n+(MORRO.has(f.properties.n)?' · morros e encostas':''),{sticky:true,direction:'top',className:'btip'})}
 }).addTo(map);
 BAIRROS.features.forEach(f=>{const c=f.properties.c;L.marker([c[0],c[1]],{interactive:false,keyboard:false,icon:L.divIcon({className:'blabel',html:esc(f.properties.n),iconSize:[120,14],iconAnchor:[60,7]})}).addTo(map)});
+
+/* ── camada de riscos oficiais (Defesa Civil / Prefeitura do Recife) ── */
+let riskLayer=null,riskVisible=false;
+function riskIcon(f){
+  const t=f.properties.tipo,cl=f.properties.classificacao;
+  const tc=t==='deslizamento'?'rk-desliz':t==='inundacao'?'rk-inund':'rk-risco';
+  const cc=cl==='mAlto'?'rk-malto':cl==='medio'?'rk-medio':'rk-alto';
+  return L.divIcon({className:'rk-mk '+tc+' '+cc,html:'<div class="rk-dot"></div>',iconSize:[16,16],iconAnchor:[8,8]});
+}
+function buildRiskLayer(){
+  if(riskLayer)return;
+  riskLayer=L.geoJSON(RISCOS,{
+    pointToLayer:(f,ll)=>L.marker(ll,{icon:riskIcon(f),alt:f.properties.titulo,title:f.properties.titulo}),
+    onEachFeature:(f,l)=>{
+      const p=f.properties;
+      const tL={deslizamento:'Deslizamento',inundacao:'Alagamento',risco:'Área de risco'}[p.tipo]||'Risco';
+      const cL={mAlto:'Muito alto',alto:'Alto',medio:'Médio',nd:'N/D'}[p.classificacao]||p.classificacao;
+      const aprox=p.posicao_aproximada?'<p class="rk-aprox">Posição aproximada</p>':'';
+      l.bindPopup('<div class="rk-popup"><b>'+esc(p.titulo)+'</b><span class="rk-tag rk-t-'+p.tipo+'">'+tL+' · '+cL+'</span>'+aprox+'<p class="rk-desc">'+esc(p.descricao)+'</p><small>'+esc(p.local||'')+'</small></div>',
+        {maxWidth:280,className:'rk-pop-wrap'});
+    }
+  });
+}
+function toggleRiskLayer(){
+  buildRiskLayer();
+  riskVisible=!riskVisible;
+  if(riskVisible){riskLayer.addTo(map);toast('Riscos oficiais: '+RISCOS.features.length+' pontos','alert');}
+  else{map.removeLayer(riskLayer);toast('Camada de riscos desativada','layers');}
+  const btn=$('#riskToggle');
+  if(btn){btn.setAttribute('aria-pressed',String(riskVisible));btn.classList.toggle('rk-on',riskVisible);}
+}
+
 const recB=bLayer.getBounds();
 map.setMaxBounds(recB.pad(.35));
 const fitRecife=()=>{const d=isDesk(),lg=document.getElementById('legend');map.fitBounds(recB,{paddingTopLeft:[d&&lg&&lg.open?320:20,20],paddingBottomRight:[d?190:20,d?20:150]})};
 fitRecife();
 const mapEl=$('#map');
-const zcls=()=>mapEl.classList.toggle('z-hi',map.getZoom()>=14);
+const zcls=()=>mapEl.classList.toggle('z-hi',map.getZoom()>=13);
 map.on('zoomend',zcls);zcls();
 document.body.classList.toggle('nomorro',!S.morro);
 
-const cg=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:48,disableClusteringAtZoom:15,
-  iconCreateFunction:c=>{const n=c.getChildCount();return L.divIcon({html:`<div>${n}</div>`,className:'cl'+(n>9?' big':''),iconSize:n>9?[56,56]:[46,46]})}});
+const cg=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:52,disableClusteringAtZoom:15,
+  iconCreateFunction:c=>{
+    const n=c.getChildCount(),xl=n>=50,lg=n>=10,sz=xl?64:lg?54:44;
+    return L.divIcon({html:`<div class="cl-ring"><span>${n}</span></div>`,
+      className:'cl'+(xl?' cl-xl':lg?' cl-lg':''),iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+  }});
 map.addLayer(cg);
 const markers={};
 function mkIcon(p,sel){
-  return L.divIcon({className:'mk'+(sel?' sel':'')+(p.s==='resolvido'?' res':''),
-    html:`<div class="pin">${icon(p.c)}<span class="st">${shape(p.s,18)}</span></div>`,iconSize:[40,49],iconAnchor:[20,49]});
+  const col=(CATS[p.c]||{}).color||'var(--primary)';
+  const cls='mk'+(sel?' sel':'')+(p.s==='resolvido'?' res':'');
+  return L.divIcon({className:cls,
+    html:`<div class="pin" style="--pc:${col}">${icon(p.c)}<span class="st">${shape(p.s,18)}</span></div>`,
+    iconSize:[44,54],iconAnchor:[22,54]});
 }
 function renderMarkers(){
   cg.clearLayers();for(const k in markers)delete markers[k];
@@ -265,7 +304,7 @@ function renderTop(){
 /* ---------- tile base CARTO ---------- */
 function setBaseTile(dark){
   const cc='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
-  const style=dark?'dark_all':'voyager';
+  const style=dark?'dark_nolabels':'voyager_nolabels';
   const key=(typeof ENV!=='undefined'&&ENV.cartoKey)?'?key='+ENV.cartoKey:'';
   const url='https://basemaps.cartocdn.com/rastertiles/'+style+'/{z}/{x}/{y}{r}.png'+key;
   if(tileBase){tileBase.setUrl(url);}
@@ -655,6 +694,7 @@ function closeMenu(){menu.hidden=true;btnMore.setAttribute('aria-expanded','fals
 btnMore.addEventListener('click',e=>{
   e.stopPropagation();if(!menu.hidden){closeMenu();return}
   menu.innerHTML=`<button data-m="fit">${icon('expand')}Ver Recife inteiro</button>
+    <button data-m="risk" id="riskToggle" class="${riskVisible?'rk-on':''}" aria-pressed="${riskVisible}">${icon('alert')}${riskVisible?'Ocultar':'Ver'} riscos oficiais</button>
     <button data-m="filt">${icon('filter')}Filtrar pontos</button>
     <button data-m="morro" aria-pressed="${S.morro}">${icon('layers')}Destacar bairros de morro<span class="switch"></span></button>
     <button data-m="leg">${icon('eye')}Mostrar legenda</button>
@@ -669,7 +709,7 @@ btnMore.addEventListener('click',e=>{
     const m=b.dataset.m;
     if(m==='morro'){S.morro=!S.morro;document.body.classList.toggle('nomorro',!S.morro);b.setAttribute('aria-pressed',S.morro);save();return}
     closeMenu();
-    if(m==='fit')fitRecife();else if(m==='filt')openFilters();else if(m==='leg'){$('#legend').open=true}
+    if(m==='fit')fitRecife();else if(m==='risk'){closeMenu();toggleRiskLayer();}else if(m==='filt')openFilters();else if(m==='leg'){$('#legend').open=true}
   }));
 });
 document.addEventListener('click',e=>{if(!menu.hidden&&!menu.contains(e.target)&&e.target!==btnMore)closeMenu()});

@@ -433,3 +433,227 @@ details.legend summary { cursor:pointer; user-select:none; }
     transition:none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   MAPA PROFISSIONAL — Recife
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Polígonos de bairros: cor por RPA ──────────────────── */
+/* Geometria base — fill mais leve para a basemap aparecer  */
+.b-poly        { fill:var(--land); stroke:var(--land-edge); stroke-width:1;   fill-opacity:.28; }
+.b-poly.morro  { fill:var(--morro);                                           fill-opacity:.35; }
+
+/* Borda da RPA usa a cor institucional da regional */
+.rpa-1 { stroke:rgba(59,130,246,.65);  }   /* Centro        — azul      */
+.rpa-2 { stroke:rgba(16,185,129,.65);  }   /* Norte         — verde     */
+.rpa-3 { stroke:rgba(139,92,246,.65);  }   /* Noroeste      — roxo      */
+.rpa-4 { stroke:rgba(245,158,11,.65);  }   /* Oeste         — âmbar     */
+.rpa-5 { stroke:rgba(239,68,68,.65);   }   /* Sudoeste      — vermelho  */
+.rpa-6 { stroke:rgba(236,72,153,.65);  }   /* Sul           — rosa      */
+.rpa-0 { stroke:var(--land-edge);      }   /* fallback                  */
+
+/* Hover sobre bairro: destaque suave */
+.b-poly:hover  { fill-opacity:.48; stroke-width:2; cursor:pointer; }
+
+/* Vizinhos: vignette "fora de Recife" */
+.v-poly {
+  fill:#6B7280; fill-opacity:.06;
+  stroke:#6B7280; stroke-width:1; stroke-dasharray:5 5;
+}
+
+/* ── Marcadores: pin com cor da categoria ───────────────── */
+.mk { background:none; border:none; }
+.mk .pin {
+  width:44px; height:44px;
+  background:var(--surface,#fff);
+  border:3px solid var(--pc,var(--primary));
+  border-radius:50% 50% 50% 50% / 55% 55% 45% 45%;
+  display:grid; place-items:center;
+  color:var(--pc,var(--primary));
+  position:relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,.22), 0 0 0 1.5px rgba(255,255,255,.6);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.mk .pin::after {           /* ponteiro triangular */
+  content:'';
+  position:absolute; bottom:-11px; left:50%;
+  transform:translateX(-50%);
+  border:6px solid transparent;
+  border-top-color:var(--pc,var(--primary));
+}
+.mk .pin svg { width:22px; height:22px; }
+.mk.sel .pin {
+  background:var(--pc,var(--primary));
+  color:#fff;
+  transform:scale(1.22) translateY(-4px);
+  box-shadow: 0 6px 20px color-mix(in srgb,var(--pc,var(--primary)) 55%,transparent), 0 0 0 2px #fff;
+  z-index:900;
+}
+.mk.res .pin {
+  opacity:.55;
+  border-style:dashed;
+}
+/* Status badge (.st) */
+.mk .pin .st {
+  position:absolute; top:-7px; right:-7px;
+  width:20px; height:20px;
+  border-radius:50%;
+  background:var(--surface,#fff);
+  border:1.5px solid var(--line-soft);
+  display:grid; place-items:center;
+}
+
+/* ── Clusters: anel com brilho ───────────────────────────── */
+.cl { background:none; border:none; }
+.cl-ring {
+  width:100%; height:100%;
+  background:var(--primary);
+  color:var(--on-primary);
+  border-radius:50%;
+  display:grid; place-items:center;
+  font:900 14px/1 'Nunito',sans-serif;
+  position:relative;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.45), 0 4px 16px rgba(0,0,0,.3);
+}
+.cl-ring::before {          /* halo exterior */
+  content:'';
+  position:absolute; inset:-7px;
+  border-radius:50%;
+  background:var(--primary);
+  opacity:.18;
+  pointer-events:none;
+}
+.cl-ring span { position:relative; z-index:1; }
+.cl-lg .cl-ring { font-size:17px; }
+.cl-xl .cl-ring {
+  font-size:19px;
+  background:#7C2D12; color:#fff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.35), 0 6px 20px rgba(124,45,18,.5);
+}
+.cl-xl .cl-ring::before { background:#7C2D12; opacity:.15; }
+
+/* ── Camada de riscos oficiais ──────────────────────────── */
+.rk-mk { background:none; border:none; }
+.rk-dot {
+  width:14px; height:14px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.8);
+  box-shadow:0 1px 6px rgba(0,0,0,.35);
+  transition:transform 100ms ease;
+}
+.rk-mk:hover .rk-dot, .rk-mk:focus .rk-dot { transform:scale(1.5); }
+
+/* Cor por tipo */
+.rk-desliz .rk-dot { background:#DC2626; }
+.rk-inund  .rk-dot { background:#2563EB; }
+.rk-risco  .rk-dot { background:#D97706; }
+
+/* Intensidade pela classificação */
+.rk-malto  .rk-dot { box-shadow:0 0 0 3px rgba(220,38,38,.35), 0 2px 8px rgba(0,0,0,.4); }
+.rk-medio  .rk-dot { opacity:.7; }
+
+/* Popup de riscos */
+.rk-pop-wrap .leaflet-popup-content-wrapper {
+  border-radius:14px;
+  box-shadow:0 8px 32px rgba(0,0,0,.25);
+  padding:0; overflow:hidden;
+}
+.rk-pop-wrap .leaflet-popup-content { margin:0; }
+.rk-popup { padding:14px 16px; font-family:'Nunito',sans-serif; min-width:220px; }
+.rk-popup b { display:block; font-size:.95rem; margin-bottom:6px; }
+.rk-tag {
+  display:inline-block; font-size:.72rem; font-weight:700;
+  padding:2px 8px; border-radius:6px; margin-bottom:8px;
+  background:var(--primary-soft,#e8eeff); color:var(--primary,#1E3A8A);
+}
+.rk-t-deslizamento { background:#fee2e2; color:#991b1b; }
+.rk-t-inundacao    { background:#dbeafe; color:#1e40af; }
+.rk-t-risco        { background:#fef3c7; color:#92400e; }
+.rk-desc { font-size:.82rem; margin:4px 0 6px; line-height:1.45; }
+.rk-aprox { font-size:.72rem; color:var(--ink-2,#666); font-style:italic; margin:2px 0 6px; }
+.rk-popup small { font-size:.68rem; color:var(--ink-2,#888); display:block; line-height:1.35; }
+
+/* Botão ativo no menu */
+.rk-on { color:var(--err,#DC2626)!important; }
+
+/* ── Rótulos de bairros ─────────────────────────────────── */
+.blabel {
+  background:none; border:none; font:700 11px/1.2 'Nunito',sans-serif;
+  color:var(--ink);
+  text-align:center; pointer-events:none;
+  text-shadow: 0 1px 3px var(--bg), 0 0 8px var(--bg);
+  opacity:0; transition:opacity 200ms ease;
+  white-space:nowrap; padding:2px 0;
+}
+.z-hi .blabel { opacity:1; }
+
+/* Tooltip Leaflet (hover nos bairros) */
+.leaflet-tooltip {
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+  border:1px solid var(--line-soft)!important;
+  border-radius:8px!important;
+  font:600 12px 'Nunito',sans-serif!important;
+  padding:4px 10px!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.2)!important;
+}
+.leaflet-tooltip::before { display:none; }
+
+/* ── Controles do mapa ─────────────────────────────────── */
+.leaflet-control-zoom {
+  border:none!important;
+  box-shadow:0 4px 16px rgba(0,0,0,.18)!important;
+  border-radius:12px!important;
+  overflow:hidden;
+}
+.leaflet-control-zoom a {
+  width:38px!important; height:38px!important;
+  line-height:38px!important;
+  background:var(--surface,#fff)!important;
+  color:var(--ink,#0B0B0F)!important;
+  border:none!important;
+  font-size:18px!important;
+  font-weight:700;
+  transition:background 120ms ease!important;
+}
+.leaflet-control-zoom a:hover { background:var(--surface-2,#f0f0f0)!important; }
+.leaflet-control-zoom-in  { border-radius:12px 12px 0 0!important; }
+.leaflet-control-zoom-out { border-radius:0 0 12px 12px!important; }
+
+.leaflet-control-attribution {
+  background:rgba(var(--bg-rgb,255,255,255),.82)!important;
+  backdrop-filter:blur(4px)!important;
+  border-radius:8px 0 0 0!important;
+  font-size:10px!important;
+  color:var(--ink-2,#555)!important;
+}
+
+/* ── Popup de pontos (Leaflet) ──────────────────────────── */
+.leaflet-popup-content-wrapper {
+  border-radius:14px!important;
+  box-shadow:0 8px 32px rgba(0,0,0,.22)!important;
+  background:var(--surface,#fff)!important;
+  color:var(--ink,#0B0B0F)!important;
+}
+.leaflet-popup-tip { background:var(--surface,#fff)!important; }
+
+/* ── Foco no mapa / highlight de Recife ─────────────────── */
+.mapwrap { position:relative; }
+/* Sombra interna sutil para focar a visão em Recife */
+.mapwrap::after {
+  content:''; pointer-events:none;
+  position:absolute; inset:0; z-index:500;
+  box-shadow:inset 0 0 60px rgba(0,0,0,.08);
+  border-radius:inherit;
+}
+
+/* dark mode adjustments */
+[data-theme="dark"] .leaflet-control-zoom a,
+@media (prefers-color-scheme:dark) {
+  .leaflet-control-zoom a { background:var(--surface)!important; color:var(--ink)!important; }
+  .leaflet-control-attribution { background:rgba(11,17,34,.82)!important; }
+}
+
+/* ── prefers-reduced-motion ─────────────────────────────── */
+@media (prefers-reduced-motion:reduce) {
+  .blabel,.rk-dot,.mk .pin { transition:none!important; }
+}
