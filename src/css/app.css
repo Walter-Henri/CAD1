@@ -75,16 +75,65 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .leaflet-container{background:var(--sea);font-family:var(--font)}
 .panel{position:absolute;z-index:1001;background:var(--surface);color:var(--ink);overflow:auto;overscroll-behavior:contain}
 .pin-inner{padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
-.tabbar{position:fixed;z-index:1002;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line-soft);
-  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-.tabbar button{height:64px;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:700;color:var(--ink-2)}
-.tabbar button[aria-current="page"]{color:var(--primary)}
-.tabbar button[aria-current="page"] .tabic{background:var(--accent);color:var(--on-accent);border-color:var(--ink)}
-.tabic{width:56px;height:30px;border-radius:15px;display:grid;place-items:center;border:2px solid transparent}
+/* ── Bottom Navigation ──────────────────────────────────── */
+.tabbar{
+  position:fixed;z-index:1002;left:0;right:0;bottom:0;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  background:var(--surface);
+  border-top:1px solid var(--line-soft);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:env(safe-area-inset-left,0px);
+  padding-right:env(safe-area-inset-right,0px);
+}
+.tabbar button{
+  height:68px;border:0;background:transparent;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--ink-2);cursor:pointer;
+  transition:color 180ms ease, transform 120ms cubic-bezier(.34,1.56,.64,1);
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.tabbar button[aria-current="page"]{color:var(--ink);}
+.tabbar button.tab-press{transform:scale(0.86);}
+
+/* Pill ── expande no item ativo */
+.tabic{
+  width:48px;height:28px;border-radius:14px;
+  display:grid;place-items:center;
+  transition:
+    width    300ms cubic-bezier(.34,1.56,.64,1),
+    background 220ms ease,
+    box-shadow 220ms ease;
+}
+.tabbar button[aria-current="page"] .tabic{
+  width:72px;
+  background:var(--accent);
+  box-shadow:0 2px 12px rgba(255,212,0,.32);
+}
+
+/* Ícone dentro da pill */
+.tabic svg{
+  transition:transform 300ms cubic-bezier(.34,1.56,.64,1), color 180ms ease;
+  color:var(--ink-2);
+}
+.tabbar button[aria-current="page"] .tabic svg{
+  transform:scale(1.12);
+  color:var(--on-accent);
+}
+
+/* Rótulo da tab */
+.tab-lbl{
+  font-size:11px;font-weight:700;letter-spacing:.02em;
+  opacity:.65;
+  transition:opacity 180ms ease, font-weight 180ms ease;
+}
+.tabbar button[aria-current="page"] .tab-lbl{
+  opacity:1;font-weight:800;
+}
 
 /* celular */
 @media (max-width:959.98px){
-  .app{height:calc(100% - 64px - 64px - env(safe-area-inset-bottom,0px))}
+  .app{height:calc(100% - 64px - 68px - env(safe-area-inset-bottom,0px))}
   .panel{display:none}
   body[data-view="detalhe"] .panel{display:block;left:0;right:0;bottom:0;max-height:74%;border-radius:22px 22px 0 0;box-shadow:0 -8px 30px rgba(10,20,50,.25)}
   body[data-view="detalhe"] .panel::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--line-soft);margin:10px auto 0}
@@ -391,16 +440,7 @@ details.legend[open] .lg { animation:lg-in 180ms ease both; }
 details.legend summary { cursor:pointer; user-select:none; }
 
 /* ── Tabbar: indicador ativo deslizante ─────────────────── */
-.tabbar button { position:relative; transition:color 150ms ease; }
-.tabbar button::after {
-  content:''; position:absolute; bottom:0; left:50%;
-  transform:translateX(-50%); width:0; height:3px;
-  background:var(--accent); border-radius:3px 3px 0 0;
-  transition:width 220ms cubic-bezier(.22,1,.36,1);
-}
-.tabbar button[aria-current="page"]::after { width:28px; }
-.tabbar button[aria-current="page"] .tabic { color:var(--accent); }
-.tabbar button .tabic { transition:color 150ms ease; }
+/* tabbar UX movido para o bloco unificado acima */
 
 /* ── Carregador de tiles ────────────────────────────────── */
 .map-loader {
@@ -428,7 +468,7 @@ details.legend summary { cursor:pointer; user-select:none; }
   .p-exit, .p-enter, .toast:not([hidden]), .toast.toast-out,
   .sv-layer, .scrim, .modal, .menu:not([hidden]),
   details.legend[open] .lg, .map-loader:not([hidden])::after,
-  .leaflet-marker-icon.new-pin, .tabbar button::after {
+  .leaflet-marker-icon.new-pin {
     animation:none !important;
     transition:none !important;
   }
@@ -636,10 +676,7 @@ details.legend summary { cursor:pointer; user-select:none; }
 }
 .leaflet-popup-tip { background:var(--surface,#fff)!important; }
 
-/* ── Foco no mapa / highlight de Recife ─────────────────── */
-.mapwrap { position:relative; }
-/* Sombra interna sutil para focar a visão em Recife */
-/* vignette removida — era z-index:500 acima do #map */
+/* .mapwrap usa position:absolute;inset:0 definido no bloco de layout — não sobrescrever aqui */
 
 /* dark mode adjustments — separados para CSS válido */
 [data-theme="dark"] .leaflet-control-zoom a {

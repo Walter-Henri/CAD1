@@ -261,7 +261,15 @@ function go(v){
   if(pick)updatePick();
   setTimeout(()=>map.invalidateSize(),0);
 }
-document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.go==='conta'&&S.view==='conta')return;go(b.dataset.go)}));
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
+  /* feedback de toque apenas na tabbar */
+  if(b.closest('.tabbar')){
+    b.classList.add('tab-press');
+    setTimeout(()=>b.classList.remove('tab-press'),120);
+  }
+  if(b.dataset.go==='conta'&&S.view==='conta')return;
+  go(b.dataset.go);
+}));
 $('#brand').addEventListener('click',()=>{go('mapa');fitRecife()});
 map.on('moveend',()=>{if(S.view==='mapa'&&isDesk())renderPanel();if(S.view==='pick')updatePick();});
 /* tile loading indicator */
