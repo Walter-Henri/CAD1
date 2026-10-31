@@ -208,9 +208,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .cl.big div{width:56px;height:56px;font-size:19px}
 .blabel{background:none;border:0;color:var(--ink-2);font-weight:800;font-size:11.5px;letter-spacing:.02em;text-align:center;white-space:nowrap;text-shadow:0 0 3px var(--land),0 0 3px var(--land),0 0 3px var(--land);pointer-events:none;display:none}
 .z-hi .blabel{display:block}
-.b-poly{fill:var(--land);stroke:var(--land-edge);stroke-width:1;fill-opacity:0.38}
-.b-poly.morro{fill:var(--morro);fill-opacity:0.42}
-.nomorro .b-poly.morro{fill:var(--land)}
+.b-poly{fill:var(--land);stroke:var(--land-edge);stroke-width:.8;fill-opacity:.35}
+.b-poly.morro{fill:var(--morro);fill-opacity:.40}
+.nomorro .b-poly.morro{fill:var(--morro);fill-opacity:.40}
 .b-poly:hover{stroke:var(--primary);stroke-width:2}
 .b-poly.flash{stroke:var(--primary);stroke-width:4}
 /* v-poly definido no bloco mapa profissional */
@@ -481,7 +481,7 @@ details.legend summary { cursor:pointer; user-select:none; }
 /* ── Polígonos de bairros: cor por RPA ──────────────────── */
 /* Geometria base — fill mais leve para a basemap aparecer  */
 .b-poly        { fill:var(--land); stroke:var(--land-edge); stroke-width:.8;  fill-opacity:.95; }
-.b-poly.morro  { fill:var(--morro);                                           fill-opacity:.92; }
+.b-poly.morro{fill:var(--morro);fill-opacity:.40}
 
 /* Borda da RPA usa a cor institucional da regional */
 .rpa-1 { stroke:rgba(59,130,246,.65);  }   /* Centro        — azul      */
@@ -497,11 +497,12 @@ details.legend summary { cursor:pointer; user-select:none; }
 
 /* Vizinhos: vignette "fora de Recife" */
 .v-poly {
-  /* municípios da RMR — territórios reais, não máscara */
+  /* vizinhos: tiles aparecem por baixo, borda sutil delimita */
   fill:var(--land-other);
-  fill-opacity:1;
+  fill-opacity:.10;
   stroke:var(--land-edge);
   stroke-width:1;
+  stroke-dasharray:4 3;
   pointer-events:none;
 }
 
@@ -696,6 +697,13 @@ details.legend summary { cursor:pointer; user-select:none; }
 }
 
 /* ── prefers-reduced-motion ─────────────────────────────── */
+.world-mask{
+  fill:var(--sea);
+  fill-opacity:1;
+  stroke:none;
+  stroke-width:0;
+}
+
 @media (prefers-reduced-motion:reduce) {
   .blabel,.rk-dot,.mk .pin { transition:none!important; }
 }

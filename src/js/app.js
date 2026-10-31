@@ -1,4 +1,5 @@
 (function(){
+let tileBase=null;
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -152,6 +153,28 @@ const map=L.map('map',{zoomControl:false,minZoom:11,maxZoom:18,zoomSnap:1,attrib
 L.control.zoom({position:'bottomright',zoomInTitle:'Aproximar',zoomOutTitle:'Afastar'}).addTo(map);
 map.attributionControl.setPrefix(false);
 map.attributionControl.addAttribution('Limites: ESIG/PCR · Riscos: Sedec/PCR · © OpenStreetMap');
+setBaseTile(isDark());
+
+/* ── máscara mundial: recorta o mapa nas cidades do GeoJSON ── */
+map.createPane('maskPane');
+map.getPane('maskPane').style.zIndex='450';
+map.getPane('maskPane').style.pointerEvents='none';
+function buildWorldMask(){
+  /* bounding box generoso em volta da RMR */
+  const outer=[[-9.1,-36.2],[-9.1,-34.1],[-7.2,-34.1],[-7.2,-36.2]];
+  const holes=[];
+  [...BAIRROS.features,...VIZINHOS.features].forEach(f=>{
+    const g=f.geometry;
+    if(g.type==='Polygon'){
+      holes.push(g.coordinates[0].map(c=>[c[1],c[0]]));
+    } else if(g.type==='MultiPolygon'){
+      g.coordinates.forEach(poly=>holes.push(poly[0].map(c=>[c[1],c[0]])));
+    }
+  });
+  L.polygon([outer,...holes],{interactive:false,pane:'maskPane',className:'world-mask'}).addTo(map);
+}
+buildWorldMask();
+
 const vizLayer=L.geoJSON(VIZINHOS,{interactive:false,style:()=>({className:'v-poly'})}).addTo(map);
 const bByName={};
 const bLayer=L.geoJSON(BAIRROS,{
@@ -270,7 +293,7 @@ document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=
 }));
 $('#brand').addEventListener('click',()=>{go('mapa');fitRecife()});
 map.on('moveend',()=>{if(S.view==='mapa'&&isDesk())renderPanel();if(S.view==='pick')updatePick();});
-/* tile loader removido — sem tiles externos */
+
 map.on('move',()=>{if(S.view==='pick')updatePick()});
 
 
@@ -290,6 +313,7 @@ function toggleTheme(){
     btn.setAttribute('title',dark?'Tema claro':'Tema escuro');
     btn.innerHTML=icon(dark?'sun':'moon');
   }
+  setBaseTile(isDark());
 }
 
 function renderTop(){
@@ -302,7 +326,15 @@ function renderTop(){
   $('#themeBtn').addEventListener('click',toggleTheme);
 }
 
-/* setBaseTile removida — mapa vetorial sem tiles externos */
+/* ---------- tile base CARTO ---------- */
+function setBaseTile(dark){
+  const cc='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  const style=dark?'dark_nolabels':'voyager_nolabels';
+  const key=(typeof ENV!=='undefined'&&ENV.cartoKey)?'?key='+ENV.cartoKey:'';
+  const url='https://basemaps.cartocdn.com/rastertiles/'+style+'/{z}/{x}/{y}{r}.png'+key;
+  if(tileBase){tileBase.setUrl(url);}
+  else{tileBase=L.tileLayer(url,{maxZoom:19,attribution:cc});tileBase.addTo(map);tileBase.bringToBack();}
+}
 
 /* ---------- login obrigatório para agir ---------- */
 function need(fn,why){
