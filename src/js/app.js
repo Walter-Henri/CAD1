@@ -1,5 +1,4 @@
 (function(){
-let tileBase=null;
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -152,9 +151,8 @@ function illus(c,v){
 const map=L.map('map',{zoomControl:false,minZoom:11,maxZoom:18,zoomSnap:1,attributionControl:true});
 L.control.zoom({position:'bottomright',zoomInTitle:'Aproximar',zoomOutTitle:'Afastar'}).addTo(map);
 map.attributionControl.setPrefix(false);
-map.attributionControl.addAttribution('Limites: ESIG/PCR · Riscos: Sedec/PCR');
-setBaseTile(isDark());
-L.geoJSON(VIZINHOS,{interactive:false,style:()=>({className:'v-poly'})}).addTo(map);
+map.attributionControl.addAttribution('Limites: ESIG/PCR · Riscos: Sedec/PCR · © OpenStreetMap');
+const vizLayer=L.geoJSON(VIZINHOS,{interactive:false,style:()=>({className:'v-poly'})}).addTo(map);
 const bByName={};
 const bLayer=L.geoJSON(BAIRROS,{
   style:f=>({className:'b-poly rpa-'+(f.properties.r||0)+(MORRO.has(f.properties.n)?' morro':'')}),
@@ -193,8 +191,8 @@ function toggleRiskLayer(){
   if(btn){btn.setAttribute('aria-pressed',String(riskVisible));btn.classList.toggle('rk-on',riskVisible);}
 }
 
-const recB=bLayer.getBounds();
-map.setMaxBounds(recB.pad(.12));
+const recB=bLayer.getBounds().extend(vizLayer.getBounds());
+map.setMaxBounds(recB.pad(.08));
 const fitRecife=()=>{const d=isDesk(),lg=document.getElementById('legend');map.fitBounds(recB,{paddingTopLeft:[d&&lg&&lg.open?320:20,20],paddingBottomRight:[d?190:20,d?20:150]})};
 fitRecife();
 const mapEl=$('#map');
@@ -272,11 +270,7 @@ document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=
 }));
 $('#brand').addEventListener('click',()=>{go('mapa');fitRecife()});
 map.on('moveend',()=>{if(S.view==='mapa'&&isDesk())renderPanel();if(S.view==='pick')updatePick();});
-/* tile loading indicator */
-let _tiles=0;
-const ml=$('#mapLoader');
-map.on('tileloadstart',()=>{_tiles++;if(ml)ml.hidden=false;});
-map.on('tileload tileerror',()=>{if(--_tiles<=0){_tiles=0;if(ml)ml.hidden=true;}});
+/* tile loader removido — sem tiles externos */
 map.on('move',()=>{if(S.view==='pick')updatePick()});
 
 
@@ -296,7 +290,6 @@ function toggleTheme(){
     btn.setAttribute('title',dark?'Tema claro':'Tema escuro');
     btn.innerHTML=icon(dark?'sun':'moon');
   }
-  setBaseTile(isDark());
 }
 
 function renderTop(){
@@ -309,15 +302,7 @@ function renderTop(){
   $('#themeBtn').addEventListener('click',toggleTheme);
 }
 
-/* ---------- tile base CARTO ---------- */
-function setBaseTile(dark){
-  const cc='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
-  const style=dark?'dark_nolabels':'voyager_nolabels';
-  const key=(typeof ENV!=='undefined'&&ENV.cartoKey)?'?key='+ENV.cartoKey:'';
-  const url='https://basemaps.cartocdn.com/rastertiles/'+style+'/{z}/{x}/{y}{r}.png'+key;
-  if(tileBase){tileBase.setUrl(url);}
-  else{tileBase=L.tileLayer(url,{maxZoom:19,attribution:cc});tileBase.addTo(map);tileBase.bringToBack();}
-}
+/* setBaseTile removida — mapa vetorial sem tiles externos */
 
 /* ---------- login obrigatório para agir ---------- */
 function need(fn,why){

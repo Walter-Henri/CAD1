@@ -213,7 +213,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .nomorro .b-poly.morro{fill:var(--land)}
 .b-poly:hover{stroke:var(--primary);stroke-width:2}
 .b-poly.flash{stroke:var(--primary);stroke-width:4}
-/* .v-poly — ver bloco do mapa profissional abaixo */
+/* v-poly definido no bloco mapa profissional */
 .leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:42px!important;font-size:22px!important;background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line-soft)!important}
 .leaflet-bar{border:1px solid var(--line-soft)!important;box-shadow:var(--shadow)!important;border-radius:12px!important;overflow:hidden}
 .leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--ink-2)!important;font-size:11px}
@@ -480,8 +480,8 @@ details.legend summary { cursor:pointer; user-select:none; }
 
 /* ── Polígonos de bairros: cor por RPA ──────────────────── */
 /* Geometria base — fill mais leve para a basemap aparecer  */
-.b-poly        { fill:var(--land); stroke:var(--land-edge); stroke-width:1;   fill-opacity:.28; }
-.b-poly.morro  { fill:var(--morro);                                           fill-opacity:.35; }
+.b-poly        { fill:var(--land); stroke:var(--land-edge); stroke-width:.8;  fill-opacity:.95; }
+.b-poly.morro  { fill:var(--morro);                                           fill-opacity:.92; }
 
 /* Borda da RPA usa a cor institucional da regional */
 .rpa-1 { stroke:rgba(59,130,246,.65);  }   /* Centro        — azul      */
@@ -497,10 +497,11 @@ details.legend summary { cursor:pointer; user-select:none; }
 
 /* Vizinhos: vignette "fora de Recife" */
 .v-poly {
-  /* máscara sobre municípios vizinhos — faz Recife ser o foco visual */
-  fill:var(--sea);
-  fill-opacity:.9;
-  stroke:none;
+  /* municípios da RMR — territórios reais, não máscara */
+  fill:var(--land-other);
+  fill-opacity:1;
+  stroke:var(--land-edge);
+  stroke-width:1;
   pointer-events:none;
 }
 
