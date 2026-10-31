@@ -152,7 +152,7 @@ function illus(c,v){
 const map=L.map('map',{zoomControl:false,minZoom:11,maxZoom:18,zoomSnap:1,attributionControl:true});
 L.control.zoom({position:'bottomright',zoomInTitle:'Aproximar',zoomOutTitle:'Afastar'}).addTo(map);
 map.attributionControl.setPrefix(false);
-map.attributionControl.addAttribution('Limites: ESIG/PCR · Riscos: Sedec/PCR');;
+map.attributionControl.addAttribution('Limites: ESIG/PCR · Riscos: Sedec/PCR');
 setBaseTile(isDark());
 L.geoJSON(VIZINHOS,{interactive:false,style:()=>({className:'v-poly'})}).addTo(map);
 const bByName={};
@@ -194,7 +194,7 @@ function toggleRiskLayer(){
 }
 
 const recB=bLayer.getBounds();
-map.setMaxBounds(recB.pad(.35));
+map.setMaxBounds(recB.pad(.12));
 const fitRecife=()=>{const d=isDesk(),lg=document.getElementById('legend');map.fitBounds(recB,{paddingTopLeft:[d&&lg&&lg.open?320:20,20],paddingBottomRight:[d?190:20,d?20:150]})};
 fitRecife();
 const mapEl=$('#map');

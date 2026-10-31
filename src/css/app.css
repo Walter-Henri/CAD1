@@ -213,7 +213,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .nomorro .b-poly.morro{fill:var(--land)}
 .b-poly:hover{stroke:var(--primary);stroke-width:2}
 .b-poly.flash{stroke:var(--primary);stroke-width:4}
-.v-poly{fill:transparent;stroke:var(--land-edge);stroke-width:1.5;stroke-dasharray:4 4;fill-opacity:0}
+/* .v-poly — ver bloco do mapa profissional abaixo */
 .leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:42px!important;font-size:22px!important;background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line-soft)!important}
 .leaflet-bar{border:1px solid var(--line-soft)!important;box-shadow:var(--shadow)!important;border-radius:12px!important;overflow:hidden}
 .leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--ink-2)!important;font-size:11px}
@@ -497,8 +497,11 @@ details.legend summary { cursor:pointer; user-select:none; }
 
 /* Vizinhos: vignette "fora de Recife" */
 .v-poly {
-  fill:#6B7280; fill-opacity:.06;
-  stroke:#6B7280; stroke-width:1; stroke-dasharray:5 5;
+  /* máscara sobre municípios vizinhos — faz Recife ser o foco visual */
+  fill:var(--sea);
+  fill-opacity:.9;
+  stroke:none;
+  pointer-events:none;
 }
 
 /* ── Marcadores: pin com cor da categoria ───────────────── */
