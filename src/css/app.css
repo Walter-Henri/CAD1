@@ -697,6 +697,7 @@ details.legend summary { cursor:pointer; user-select:none; }
 }
 
 /* ── prefers-reduced-motion ─────────────────────────────── */
+.leaflet-tile-pane{transition:filter 300ms ease;}
 .world-mask{
   fill:var(--sea);
   fill-opacity:1;

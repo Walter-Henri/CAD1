@@ -67,31 +67,13 @@ Acesse `http://localhost:8080` (ou `8000` para Python).
 Os dados do usuário são salvos no `localStorage` com a chave `mutirao.v1`.  
 A preferência de tema é salva com a chave `mutirao.theme`.
 
-## API do mapa (CARTO)
+## Mapa (OpenStreetMap — sem API)
 
-Os tiles do mapa vêm do CARTO. Sem chave, funcionam em modo demo com limitação de taxa.  
-Para produção, obtenha uma chave gratuita em [carto.com](https://carto.com).
+Os tiles do mapa vêm diretamente do OpenStreetMap — sem cadastro, sem chave de API, sem custo.  
+Os dados são atualizados continuamente pela comunidade (contribuições chegam em horas).
 
-### Localmente
-
-```bash
-# 1. Crie o arquivo de variáveis locais (não sobe pro Git)
-cp .env.example .env.local
-
-# 2. Coloque sua chave CARTO dentro do arquivo
-CARTO_API_KEY=sua_chave_aqui
-
-# 3. Suba o projeto (o script gera src/js/data/env.js automaticamente)
-npm run dev
-```
-
-### Na Vercel
-
-1. Vá em **Settings > Environment Variables** do seu projeto.  
-2. Adicione `CARTO_API_KEY` com o valor da sua chave.  
-3. Faça um novo deploy — o `buildCommand` do `vercel.json` roda `inject-env.mjs` automaticamente.
-
-> ⚠️ Nunca coloque a chave diretamente em `env.js`, `app.js` ou qualquer arquivo versionado.
+O tema escuro aplica `filter: invert(100%) hue-rotate(180deg)` sobre o pane das tiles —  
+sem necessidade de um tile server separado para o modo escuro.
 
 ## Street View
 

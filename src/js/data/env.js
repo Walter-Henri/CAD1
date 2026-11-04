@@ -1,4 +1,4 @@
-// Gerado por scripts/inject-env.mjs. Não edite manualmente.
-// Localmente: crie .env.local com CARTO_API_KEY=sua_chave
-// Na Vercel: Settings > Environment Variables > CARTO_API_KEY
+// Variáveis de ambiente injetadas em build.
+// CARTO_API_KEY não é mais necessário — tiles via OpenStreetMap (sem API key).
+// Este arquivo é mantido para configurações futuras (ex: Google Maps API para Street View).
 const ENV = { cartoKey: "" };

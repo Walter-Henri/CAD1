@@ -152,7 +152,7 @@ function illus(c,v){
 const map=L.map('map',{zoomControl:false,minZoom:11,maxZoom:18,zoomSnap:1,attributionControl:true});
 L.control.zoom({position:'bottomright',zoomInTitle:'Aproximar',zoomOutTitle:'Afastar'}).addTo(map);
 map.attributionControl.setPrefix(false);
-map.attributionControl.addAttribution('Limites: ESIG/PCR · Riscos: Sedec/PCR · © OpenStreetMap');
+map.attributionControl.addAttribution('Limites: ESIG/PCR · Riscos: Sedec/PCR');
 setBaseTile(isDark());
 
 /* ── máscara mundial: recorta o mapa nas cidades do GeoJSON ── */
@@ -326,14 +326,32 @@ function renderTop(){
   $('#themeBtn').addEventListener('click',toggleTheme);
 }
 
-/* ---------- tile base CARTO ---------- */
+/* ---------- tile base OpenStreetMap (sem API key) ---------- */
 function setBaseTile(dark){
-  const cc='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
-  const style=dark?'dark_nolabels':'voyager_nolabels';
-  const key=(typeof ENV!=='undefined'&&ENV.cartoKey)?'?key='+ENV.cartoKey:'';
-  const url='https://basemaps.cartocdn.com/rastertiles/'+style+'/{z}/{x}/{y}{r}.png'+key;
-  if(tileBase){tileBase.setUrl(url);}
-  else{tileBase=L.tileLayer(url,{maxZoom:19,attribution:cc});tileBase.addTo(map);tileBase.bringToBack();}
+  const cc='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  /* OSM usa subdomains a/b/c para distribuir carga */
+  const url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  if(tileBase){
+    /* dark mode via CSS filter — não exige tile alternativa */
+    _applyTileTheme(dark);
+    return;
+  }
+  tileBase=L.tileLayer(url,{
+    maxZoom:19,
+    subdomains:['a','b','c'],
+    attribution:cc,
+    className:'osm-tiles'
+  });
+  tileBase.addTo(map);
+  tileBase.bringToBack();
+  _applyTileTheme(dark);
+}
+function _applyTileTheme(dark){
+  const pane=map.getPane('tilePane');
+  if(!pane)return;
+  pane.style.filter=dark
+    ?'invert(100%) hue-rotate(180deg) brightness(.9) contrast(.88) saturate(.85)'
+    :'';
 }
 
 /* ---------- login obrigatório para agir ---------- */
