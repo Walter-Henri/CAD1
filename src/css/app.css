@@ -708,3 +708,121 @@ details.legend summary { cursor:pointer; user-select:none; }
 @media (prefers-reduced-motion:reduce) {
   .blabel,.rk-dot,.mk .pin { transition:none!important; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PICKBAR REDESENHADA — GPS · GEOCODIFICAÇÃO · PESQUISA
+   ═══════════════════════════════════════════════════════════ */
+.pickbar{
+  position:absolute; bottom:0; left:0; right:0; z-index:800;
+  background:var(--surface);
+  border-radius:20px 20px 0 0;
+  border-top:1px solid var(--line-soft);
+  padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));
+  display:flex; flex-direction:column; gap:10px;
+  box-shadow:0 -4px 24px rgba(0,0,0,.14);
+}
+/* drag handle */
+.pickbar::before{
+  content:''; position:absolute; top:8px; left:50%;
+  transform:translateX(-50%);
+  width:36px; height:4px; border-radius:2px;
+  background:var(--line-soft);
+}
+
+/* search row */
+.pb-search-row{display:flex;gap:8px;align-items:center;}
+.pb-search{
+  flex:1; display:flex; align-items:center; gap:8px;
+  background:var(--surface-2); border-radius:12px;
+  padding:0 12px; height:44px; border:1.5px solid var(--line-soft);
+  transition:border-color 150ms ease;
+}
+.pb-search:focus-within{border-color:var(--primary);}
+.pb-search input{flex:1;border:0;background:transparent;color:var(--ink);font:inherit;font-size:.9rem;outline:none;}
+.pb-search input::placeholder{color:var(--ink-2);}
+.pb-clear{background:transparent;border:0;color:var(--ink-2);cursor:pointer;font-size:1.1rem;padding:0 2px;}
+
+/* GPS button */
+.pb-gps{
+  width:44px;height:44px;flex:none;
+  border-radius:12px;border:1.5px solid var(--line-soft);
+  background:var(--surface-2);color:var(--primary);
+  display:grid;place-items:center;cursor:pointer;
+  transition:background 120ms ease,transform 100ms ease;
+}
+.pb-gps:hover{background:var(--primary-soft);}
+.pb-gps:active{transform:scale(0.9);}
+.pb-gps.gps-spin svg{animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* suggest dropdown */
+.pb-suggest{
+  list-style:none;margin:0;padding:0;
+  background:var(--surface);
+  border:1px solid var(--line-soft);
+  border-radius:12px;
+  max-height:160px;overflow-y:auto;
+  box-shadow:0 4px 16px rgba(0,0,0,.12);
+}
+.pb-suggest li{
+  padding:10px 14px;font-size:.85rem;cursor:pointer;
+  border-bottom:1px solid var(--line-soft);
+  transition:background 80ms ease;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.pb-suggest li:last-child{border-bottom:0;}
+.pb-suggest li:hover{background:var(--surface-2);}
+
+/* location info */
+.pb-loc{padding:2px 2px 0;}
+.pb-bairro{font-size:.88rem;font-weight:700;color:var(--ink);line-height:1.4;}
+.pb-addr{font-size:.8rem;color:var(--ink-2);margin-top:2px;min-height:1em;}
+.pb-coords{font-size:.72rem;color:var(--ink-2);opacity:.7;font-variant-numeric:tabular-nums;margin-top:2px;}
+
+/* ═══════════════════════════════════════════════════════════
+   MAPA DE CALOR (CHOROPLETH)
+   ═══════════════════════════════════════════════════════════ */
+.choro-tip{
+  font-family:'Nunito',sans-serif;font-size:.8rem;
+  background:var(--surface)!important;color:var(--ink)!important;
+  border:1px solid var(--line-soft)!important;
+  border-radius:8px!important;padding:4px 10px!important;
+}
+.choro-legend{
+  position:absolute;bottom:90px;right:12px;z-index:700;
+  background:var(--surface);border:1px solid var(--line-soft);
+  border-radius:14px;padding:12px 14px;min-width:160px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);
+}
+.cl-title{display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;margin-bottom:8px;}
+.cl-scale{
+  height:10px;border-radius:5px;margin-bottom:4px;
+  background:linear-gradient(to right,
+    rgb(30,58,138),rgb(255,212,0),rgb(220,38,38));
+}
+.cl-labels{display:flex;justify-content:space-between;font-size:.68rem;color:var(--ink-2);}
+.cl-close{position:absolute;top:6px;right:6px;width:24px;height:24px;}
+
+/* ═══════════════════════════════════════════════════════════
+   BOTÃO WHATSAPP (recurso exclusivo)
+   ═══════════════════════════════════════════════════════════ */
+.btn-wa{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:0 16px;height:40px;border-radius:10px;border:0;
+  background:#25D366;color:#fff;
+  font:700 .82rem/1 'Nunito',sans-serif;
+  cursor:pointer;white-space:nowrap;
+  transition:transform 80ms ease,filter 120ms ease;
+}
+.btn-wa:hover{filter:brightness(1.08);}
+.btn-wa:active{transform:scale(0.95);}
+.btn-wa svg{color:#fff;}
+
+/* Mobile: pickbar sobre a tabbar */
+@media(max-width:767px){
+  .pickbar{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px) + 10px);}
+}
+/* Desktop: pickbar ao lado do painel */
+@media(min-width:768px){
+  .pickbar{left:420px;border-radius:16px 16px 0 0;}
+}

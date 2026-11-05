@@ -427,6 +427,84 @@ function transPanel(html){
     bindPanel();
   },90);
 }
+
+/* ════════════════════════════════════════════════════════════
+   MAPA DE CALOR POR BAIRRO (choropleth)
+   ════════════════════════════════════════════════════════════ */
+let choroOn=false;
+const _choroOrig=new Map();
+
+function renderChoropleth(){
+  const counts={};
+  all().filter(p=>p.s!=='resolvido').forEach(p=>{counts[p.b]=(counts[p.b]||0)+1;});
+  const vals=Object.values(counts),mx=vals.length?Math.max(...vals):1;
+  bLayer.eachLayer(l=>{
+    const name=l.feature.properties.n,cnt=counts[name]||0;
+    _choroOrig.set(l._leaflet_id,{fillColor:l.options.fillColor,fillOpacity:l.options.fillOpacity});
+    const t=cnt/mx;
+    // escala: azul(0) → amarelo(0.5) → vermelho(1)
+    let r,g,b;
+    if(t<0.5){const u=t*2;r=Math.round(30+u*(255-30));g=Math.round(58+u*(212-58));b=Math.round(138+u*(0-138));}
+    else{const u=(t-0.5)*2;r=255;g=Math.round(212*(1-u));b=0;}
+    l.setStyle({fillColor:`rgb(${r},${g},${b})`,fillOpacity:cnt?0.42+t*0.45:0.06});
+    l.bindTooltip(`<b>${esc(name)}</b><br>${cnt} problema${cnt!==1?'s':''}`,{sticky:true,className:'choro-tip'});
+  });
+  _renderChoroLegend(mx);
+}
+
+function _renderChoroLegend(mx){
+  const ex=$('#choroLegend');if(ex)ex.remove();
+  const div=document.createElement('div');div.id='choroLegend';div.className='choro-legend';
+  div.innerHTML=`<div class="cl-title">${icon('rank','sm')}Problemas por bairro</div>
+    <div class="cl-scale"></div>
+    <div class="cl-labels"><span>0</span><span>${Math.round(mx/2)}</span><span>${mx}</span></div>
+    <button class="cl-close iconbtn" id="choroLegendClose" aria-label="Fechar">${icon('close')}</button>`;
+  document.getElementById('map').appendChild(div);
+  $('#choroLegendClose').addEventListener('click',()=>{choroOn=false;clearChoropleth();updateChoroBtn();});
+}
+
+function clearChoropleth(){
+  bLayer.eachLayer(l=>{
+    if(_choroOrig.has(l._leaflet_id)){l.setStyle(_choroOrig.get(l._leaflet_id));_choroOrig.delete(l._leaflet_id);}
+    if(l.unbindTooltip)l.unbindTooltip();
+  });
+  const leg=$('#choroLegend');if(leg)leg.remove();
+}
+
+function updateChoroBtn(){
+  const btn=$('#choroToggle');
+  if(btn){btn.setAttribute('aria-pressed',String(choroOn));btn.classList.toggle('active',choroOn);}
+}
+
+function toggleChoropleth(){
+  choroOn=!choroOn;
+  if(choroOn)renderChoropleth();else clearChoropleth();
+  updateChoroBtn();
+  toast(choroOn?'Mapa de calor ativado':'Mapa de calor desativado','rank');
+}
+
+/* ══════════════════════════════════════════════════════════
+   COMPARTILHAR VIA WHATSAPP (recurso exclusivo)
+   ══════════════════════════════════════════════════════════ */
+function shareWhatsApp(p){
+  const n=apoios(p),d=daysOf(p),catName=(CATS[p.c]||{}).n||p.c;
+  const link=`https://maps.google.com/?q=${p.lat},${p.lng}`;
+  const lines=[
+    '🚨 *Mutirão · Recife*',
+    `Problema em *${p.b}*`,
+    '',
+    `📍 *${p.t}*`,
+    `📂 ${catName}`,
+    `⏱ ${d} ${d===1?'dia':'dias'} sem resolução`,
+    n?`👥 ${n} ${n===1?'vizinho apoia':'vizinhos apoiam'}`:'',
+    '',
+    `🗺 ${link}`,
+    '',
+    '_Reporte feito pelo app Mutirão — ninguém cobra sozinho._'
+  ].filter(l=>l!==null);
+  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank','noopener');
+}
+
 function renderPanel(){
   const v=S.view;
   const html=v==='mapa'?vMapa():v==='detalhe'?vDetalhe():v==='ranking'?vRanking():v==='votacao'?vVotacao():v==='conta'?(S.user?vConta():vLogin()):v==='adicionar'?vAdicionar():v==='sucesso'?vSucesso():vMapa();
@@ -472,7 +550,8 @@ function vDetalhe(){
       <button class="btn sec" id="dPhoto">${icon('camera')}Enviar foto</button>
       <button class="btn sec" id="dNote">${icon('note')}Adicionar nota</button>
       <button class="btn sec" id="dShare">${icon('share')}Compartilhar</button>
-      <button class="btn sec" id="dStreetView">${icon('ext')}Street View</button></div>
+      <button class="btn sec" id="dStreetView">${icon('ext')}Street View</button>
+      <button class="btn-wa" id="dWhatsApp">${icon('whatsapp','sm')}WhatsApp</button></div>
     <form id="noteForm" class="field" hidden novalidate>
       <label for="noteTxt">Sua nota</label>
       <textarea class="textarea" id="noteTxt" maxlength="280" placeholder="Ex.: Hoje choveu e a água entrou de novo."></textarea>
@@ -617,6 +696,7 @@ function bindPanel(){
   on('dNote','click',()=>need(()=>{openDetail(p.id);const f=$('#noteForm');f.hidden=false;$('#noteTxt').focus()},'adicionar nota'));
   on('dShare','click',()=>share(p));
   on('dStreetView','click',()=>{if(p)openSVLayer(p.lat,p.lng,p.t);});
+  on('dWhatsApp','click',()=>{if(p)shareWhatsApp(p);});
   on('noteCancel','click',()=>{$('#noteForm').hidden=true});
   on('noteForm','submit',e=>{e.preventDefault();const t=$('#noteTxt').value.trim(),f=$('#noteForm');if(!t){f.classList.add('err');$('#noteTxt').focus();return}
     (S.notes[p.id]=S.notes[p.id]||[]).push({x:t,t:Date.now()});save();renderPanel();toast('Nota publicada.','check')});
@@ -659,14 +739,119 @@ function doLogin(e){
   const fn=S.pending;S.pending=null;if(fn)fn();else go('conta');
 }
 function startAdd(){need(()=>{S.draft={photos:[]};if(map.getZoom()<15)map.setZoom(15);go('pick')},'adicionar um ponto')}
+
+/* ════════════════════════════════════════════════════════════
+   GPS · GEOCODIFICAÇÃO · PESQUISA (Nominatim / OSM — sem API)
+   ════════════════════════════════════════════════════════════ */
+
+function getGPS(cb){
+  if(!navigator.geolocation)return cb(null,'GPS não suportado neste dispositivo.');
+  const btn=$('#pickGpsBtn');
+  if(btn){btn.classList.add('gps-spin');btn.disabled=true;}
+  navigator.geolocation.getCurrentPosition(
+    p=>{
+      if(btn){btn.classList.remove('gps-spin');btn.disabled=false;}
+      cb({lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy)});
+    },
+    e=>{
+      if(btn){btn.classList.remove('gps-spin');btn.disabled=false;}
+      const m={1:'Permissão negada. Habilite o GPS.',2:'Localização indisponível.',3:'Tempo esgotado.'};
+      cb(null,m[e.code]||'Erro de GPS.');
+    },
+    {enableHighAccuracy:true,timeout:12000,maximumAge:60000}
+  );
+}
+
+let _rgTimer=null;
+async function reverseGeocode(lat,lng){
+  try{
+    const r=await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR&zoom=17`,
+      {headers:{'User-Agent':'Mutirao-Recife/1.0'}}
+    );
+    if(!r.ok)return null;
+    const d=await r.json();
+    if(!d.address)return null;
+    const a=d.address;
+    const road=[a.road||a.pedestrian||a.path,a.house_number].filter(Boolean).join(', ');
+    return road||a.suburb||a.neighbourhood||a.city_district||'';
+  }catch(e){return null;}
+}
+
+let _srTimer=null;
+async function geocodeSearch(q){
+  try{
+    const r=await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q+', Recife')}&format=json&limit=5&accept-language=pt-BR&countrycodes=br`,
+      {headers:{'User-Agent':'Mutirao-Recife/1.0'}}
+    );
+    if(!r.ok)return[];
+    return await r.json();
+  }catch(e){return[];}
+}
+
 function updatePick(){
   const c=map.getCenter(),b=bairroAt(c.lat,c.lng);
-  $('#pickWhere').innerHTML=b?`${icon('pin','sm')} ${esc(b.n)} · RPA ${b.r} ${RPA[b.r]}`:`<span style="color:var(--err);font-weight:800">${icon('alert','sm')} Fora do Recife. Arraste o mapa para dentro da cidade.</span>`;
-  $('#pickOk').disabled=!b;
+  const wh=$('#pickWhere');
+  if(wh)wh.innerHTML=b?`${icon('pin','sm')} ${esc(b.n)} · RPA ${b.r} ${RPA[b.r]}`:`<span style="color:var(--err)">${icon('alert','sm')} Fora do Recife</span>`;
+  const ok=$('#pickOk');if(ok)ok.disabled=!b;
+  const co=$('#pickCoords');
+  if(co)co.textContent=`${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
+  clearTimeout(_rgTimer);
+  _rgTimer=setTimeout(async()=>{
+    const addr=await reverseGeocode(c.lat,c.lng);
+    const adEl=$('#pickAddr');if(adEl)adEl.textContent=addr||'';
+  },900);
 }
 $('#pickCancel').addEventListener('click',()=>{if(S.draft&&S.draft.b)go('adicionar');else{S.draft=null;go('mapa')}});
 $('#pickOk').addEventListener('click',()=>{const c=map.getCenter(),b=bairroAt(c.lat,c.lng);if(!b)return;
   S.draft=Object.assign(S.draft||{photos:[]},{lat:+c.lat.toFixed(5),lng:+c.lng.toFixed(5),b:b.n,r:b.r});go('adicionar')});
+
+/* GPS button */
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#pickGpsBtn'))return;
+  e.stopPropagation();
+  getGPS((pos,err)=>{
+    if(err){toast(err,'alert');return;}
+    const ll=L.latLng(pos.lat,pos.lng);
+    if(recB&&!recB.pad(.3).contains(ll)){toast('Localização fora da área do Recife.','alert');return;}
+    map.flyTo(ll,16,{animate:true,duration:0.6});
+    toast(`GPS · precisão ±${pos.acc}m`,'check');
+  });
+});
+
+/* Busca de endereço no modo pick */
+function showPickSuggest(results){
+  const ul=$('#pickSuggest');if(!ul)return;
+  if(!results.length){ul.hidden=true;return;}
+  ul.innerHTML=results.map((r,i)=>`<li data-lat="${r.lat}" data-lng="${r.lon}" data-idx="${i}">${esc(r.display_name.split(',').slice(0,3).join(', '))}</li>`).join('');
+  ul.hidden=false;
+}
+document.addEventListener('click',e=>{
+  const li=e.target.closest('#pickSuggest li');if(!li)return;
+  const lat=+li.dataset.lat,lng=+li.dataset.lng;
+  map.flyTo([lat,lng],16,{animate:true,duration:0.6});
+  $('#pickSuggest').hidden=true;
+  const inp=$('#pickSearch');if(inp)inp.value='';
+});
+document.addEventListener('input',e=>{
+  if(e.target.id!=='pickSearch')return;
+  const q=e.target.value.trim();
+  const cl=$('#pickSearchClear');if(cl)cl.hidden=!q;
+  clearTimeout(_srTimer);
+  if(q.length<3){$('#pickSuggest').hidden=true;return;}
+  _srTimer=setTimeout(async()=>{
+    const res=await geocodeSearch(q);
+    showPickSuggest(res);
+  },500);
+});
+document.addEventListener('click',e=>{
+  if(e.target.id==='pickSearchClear'){
+    const inp=$('#pickSearch');if(inp)inp.value='';
+    $('#pickSuggest').hidden=true;
+    e.target.hidden=true;
+  }
+});
 function keepDraft(){
   const f=$('#addForm');if(!f||!S.draft)return;
   const c=f.querySelector('input[name=cat]:checked'),pl=f.querySelector('input[name=pal]:checked');
@@ -737,6 +922,7 @@ function closeMenu(){menu.hidden=true;btnMore.setAttribute('aria-expanded','fals
 btnMore.addEventListener('click',e=>{
   e.stopPropagation();if(!menu.hidden){closeMenu();return}
   menu.innerHTML=`<button data-m="fit">${icon('expand')}Ver Recife inteiro</button>
+    <button data-m="choro" id="choroToggle" class="${choroOn?'active':''}" aria-pressed="${choroOn}">${icon('rank')}${choroOn?'Ocultar':'Ver'} mapa de calor</button>
     <button data-m="risk" id="riskToggle" class="${riskVisible?'rk-on':''}" aria-pressed="${riskVisible}">${icon('alert')}${riskVisible?'Ocultar':'Ver'} riscos oficiais</button>
     <button data-m="filt">${icon('filter')}Filtrar pontos</button>
     <button data-m="morro" aria-pressed="${S.morro}">${icon('layers')}Destacar bairros de morro<span class="switch"></span></button>
@@ -752,7 +938,7 @@ btnMore.addEventListener('click',e=>{
     const m=b.dataset.m;
     if(m==='morro'){S.morro=!S.morro;document.body.classList.toggle('nomorro',!S.morro);b.setAttribute('aria-pressed',S.morro);save();return}
     closeMenu();
-    if(m==='fit')fitRecife();else if(m==='risk'){closeMenu();toggleRiskLayer();}else if(m==='filt')openFilters();else if(m==='leg'){$('#legend').open=true}
+    if(m==='fit')fitRecife();else if(m==='choro'){closeMenu();toggleChoropleth();}else if(m==='risk'){closeMenu();toggleRiskLayer();}else if(m==='filt')openFilters();else if(m==='leg'){$('#legend').open=true}
   }));
 });
 document.addEventListener('click',e=>{if(!menu.hidden&&!menu.contains(e.target)&&e.target!==btnMore)closeMenu()});
