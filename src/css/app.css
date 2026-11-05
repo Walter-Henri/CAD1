@@ -59,7 +59,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 /* ---------- busca ---------- */
 .search{position:relative}
-.search input{width:100%;height:48px;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:0 48px 0 44px;font-size:16px}
+.search input{width:100%;height:48px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);padding:0 48px 0 44px;font-size:16px}
+.search input::placeholder{color:var(--ink-2)}
 .search .ic{position:absolute;left:12px;top:13px;color:var(--ink-2)}
 .search .clear{position:absolute;right:4px;top:4px;width:40px;height:40px;border:0;background:transparent;border-radius:10px;color:var(--ink-2)}
 .topsearch input{border-color:transparent}
@@ -189,18 +190,12 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .lg-cat .ic{width:15px;height:15px}
 .lg-sw{width:16px;height:16px;border-radius:4px;border:1px solid var(--land-edge);flex:none}
 
-.pickbar{position:absolute;z-index:850;left:12px;right:12px;bottom:20px;background:var(--surface);border:2px solid var(--ink);border-radius:18px;box-shadow:var(--shadow);padding:14px;display:grid;gap:10px;max-width:520px;margin:0 auto}
-.pickbar p{font-weight:700}
-.pickbar .where{font-size:14px;color:var(--ink-2);font-weight:600}
-.pickpin{position:absolute;z-index:840;left:50%;top:50%;transform:translate(-50%,-100%);pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}
-
 /* ---------- marcadores ---------- */
 .mk{background:none;border:0}
 .mk .pin{position:relative;width:40px;height:40px;border-radius:50%;background:var(--surface);border:3px solid var(--primary);color:var(--primary);display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.25);transition:transform .12s}
 .mk .pin::after{content:"";position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);border:7px solid transparent;border-top:8px solid var(--primary);border-bottom:0}
 .mk .pin .ic{width:20px;height:20px}
-.mk.sel .pin{transform:scale(1.18);background:var(--accent);color:#0B0B0F;border-color:#0B0B0F}
-.mk.sel .pin::after{border-top-color:#0B0B0F}
+
 .mk .st{position:absolute;top:-6px;right:-8px}
 .mk.res .pin{opacity:.7}
 .cl{background:none}
@@ -210,15 +205,12 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .z-hi .blabel{display:block}
 .b-poly{fill:var(--land);stroke:var(--land-edge);stroke-width:.8;fill-opacity:.35}
 .b-poly.morro{fill:var(--morro);fill-opacity:.40}
-.nomorro .b-poly.morro{fill:var(--morro);fill-opacity:.40}
-.b-poly:hover{stroke:var(--primary);stroke-width:2}
 .b-poly.flash{stroke:var(--primary);stroke-width:4}
-/* v-poly definido no bloco mapa profissional */
+
 .leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:42px!important;font-size:22px!important;background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line-soft)!important}
 .leaflet-bar{border:1px solid var(--line-soft)!important;box-shadow:var(--shadow)!important;border-radius:12px!important;overflow:hidden}
 .leaflet-control-attribution{background:color-mix(in srgb,var(--surface) 85%,transparent)!important;color:var(--ink-2)!important;font-size:11px}
 .leaflet-control-attribution a{color:var(--primary)!important}
-
 
 /* ---------- status (forma + cor + texto) ---------- */
 .shape{width:16px;height:16px;flex:none;display:inline-block}
@@ -245,7 +237,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .field{display:grid;gap:6px}
 .field label,.flabel{font-weight:800;font-size:15px}
 .field .hint{font-size:13.5px;color:var(--ink-2)}
-.input,.textarea,.select{width:100%;min-height:52px;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:12px 14px;font-size:16px}
+.input,.textarea,.select{width:100%;min-height:52px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);padding:12px 14px;font-size:16px}
 .textarea{min-height:110px;resize:vertical}
 .input:focus,.textarea:focus,.select:focus{border-color:var(--primary);outline:3px solid color-mix(in srgb,var(--primary) 30%,transparent);outline-offset:0;box-shadow:none}
 .field.err .input,.field.err .textarea{border-color:var(--err)}
@@ -359,7 +351,6 @@ h3.sec{font-size:17px;font-weight:900}
 .toast{position:fixed;z-index:2100;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:700;box-shadow:var(--shadow);max-width:calc(100% - 32px);display:flex;gap:8px;align-items:center}
 @media (min-width:960px){.toast{bottom:28px;left:calc(50% + 210px)}}
 
-
 /* ---------- botão de tema ---------- */
 .btn-theme{width:44px;height:44px;border-radius:12px;border:2px solid rgba(255,255,255,.4);background:transparent;color:#fff;display:grid;place-items:center;flex:none}
 .btn-theme:hover{background:rgba(255,255,255,.12)}
@@ -440,7 +431,6 @@ details.legend[open] .lg { animation:lg-in 180ms ease both; }
 details.legend summary { cursor:pointer; user-select:none; }
 
 /* ── Tabbar: indicador ativo deslizante ─────────────────── */
-/* tabbar UX movido para o bloco unificado acima */
 
 /* ── Carregador de tiles ────────────────────────────────── */
 .map-loader {
@@ -480,8 +470,6 @@ details.legend summary { cursor:pointer; user-select:none; }
 
 /* ── Polígonos de bairros: cor por RPA ──────────────────── */
 /* Geometria base — fill mais leve para a basemap aparecer  */
-.b-poly        { fill:var(--land); stroke:var(--land-edge); stroke-width:.8;  fill-opacity:.95; }
-.b-poly.morro{fill:var(--morro);fill-opacity:.40}
 
 /* Borda da RPA usa a cor institucional da regional */
 .rpa-1 { stroke:rgba(59,130,246,.65);  }   /* Centro        — azul      */
@@ -529,6 +517,7 @@ details.legend summary { cursor:pointer; user-select:none; }
 .mk .pin svg { width:22px; height:22px; }
 .mk.sel .pin {
   background:var(--pc,var(--primary));
+  border-color:var(--pc,var(--primary));
   color:#fff;
   transform:scale(1.22) translateY(-4px);
   box-shadow: 0 4px 20px rgba(0,0,0,.4), 0 0 0 2px #fff;
