@@ -1,80 +1,78 @@
-# Mutirão · E7 Protótipo v1
+# Mutirão · Recife — E7 Protótipo v1
 
-Mapa colaborativo de problemas de bairro no Recife. Os moradores marcam barreiras, alagamentos, buracos e obras paradas; a associação leva os mais votados ao vereador.
+Mapa colaborativo de problemas de bairro no Recife. Moradores marcam barreiras, alagamentos, buracos e obras paradas; a associação leva os mais votados ao vereador.
+
+> **Para IAs e desenvolvedores:** leia [`DOCUMENTATION/AI_CONTEXT_GUIDE.md`](DOCUMENTATION/AI_CONTEXT_GUIDE.md) antes de modificar qualquer arquivo.
 
 ## Stack
 
 Vanilla HTML + CSS + JavaScript (sem framework, sem bundler).  
-Dependências externas via CDN: Leaflet 1.9.4, MarkerCluster 1.5.3, Nunito (Google Fonts).
+Mapa: Leaflet 1.9.4 + OpenStreetMap tiles (sem API key).  
+Geocodificação: Nominatim OSM (sem API key).
 
 ## Estrutura
 
 ```
 mutirao/
-├── index.html              # Entrada da aplicação
+├── index.html              # Entrada (HTML + SVG sprite + script tags)
 ├── src/
 │   ├── css/
-│   │   ├── vendor.css      # CSS do Leaflet + MarkerCluster
-│   │   └── app.css         # Estilos da aplicação
+│   │   ├── vendor.css      # Leaflet + MarkerCluster CSS
+│   │   └── app.css         # Estilos da aplicação (818 linhas)
 │   └── js/
-│       ├── data/
-│       │   ├── bairros.js  # GeoJSON dos bairros do Recife
-│       │   ├── vizinhos.js # GeoJSON das cidades vizinhas
-│       │   └── seed.js     # Pontos de exemplo do protótipo
-│       └── app.js          # Lógica da aplicação (IIFE)
+│       ├── app.js          # Toda a lógica (987 linhas, 67 funções)
+│       └── data/
+│           ├── bairros.js  # 94 bairros do Recife (GeoJSON)
+│           ├── vizinhos.js # 6 municípios adjacentes (GeoJSON)
+│           ├── seed.js     # 40 pontos de exemplo
+│           ├── riscos.js   # 373 pontos reais (Defesa Civil/Sedec)
+│           └── env.js      # Variáveis de ambiente (stub)
+├── scripts/
+│   └── inject-env.mjs      # Gera env.js no build
+├── DOCUMENTATION/
+│   ├── AI_CONTEXT_GUIDE.md           # Guia central para IAs
+│   ├── ARCHITECTURE/SYSTEM_OVERVIEW.md
+│   ├── BUGFIXES/BUGFIX_REPORT.md
+│   ├── TESTING/TEST_EXECUTION_REPORT.md
+│   └── DEVELOPMENT/CHANGELOG.md
+├── package.json
 ├── vercel.json
-└── README.md
+└── .env.example
 ```
 
 ## Rodar localmente
 
-Qualquer servidor estático funciona. Exemplo com Node.js:
-
 ```bash
+npm run dev       # gera env.js + serve em localhost
+# ou
 npx serve .
-```
-
-Ou com Python:
-
-```bash
+# ou
 python3 -m http.server 8080
 ```
 
-Acesse `http://localhost:8080` (ou `8000` para Python).
-
 ## Deploy na Vercel
 
-1. Suba o repositório no GitHub.  
-2. No painel da Vercel, importe o repositório.  
-3. **Framework Preset:** `Other` (detecção automática de site estático).  
-4. **Root Directory:** `.` (raiz do repositório).  
-5. **Build Command:** deixe vazio (não há etapa de build).  
-6. **Output Directory:** `.` (já está configurado em `vercel.json`).  
-7. Clique em **Deploy**.
+1. Suba no GitHub
+2. Importe no Vercel — **Framework:** `Other` (static)
+3. **Root Directory:** `.` | **Build Command:** `node scripts/inject-env.mjs` | **Output:** `.`
+4. Deploy
 
 ## Funcionalidades
 
-- Mapa de pontos colaborativo por bairro e RPA do Recife
-- Adicionar, apoiar, votar e enviar fotos (dados ficam no localStorage)
-- Ranking de problemas por apoios ou tempo de espera
-- Votação mensal da associação
-- Busca por bairro ou problema
-- Tema claro/escuro com preferência salva
-- Responsivo (mobile + desktop)
+- Mapa vetorial de Recife + 6 municípios da RMR
+- World mask: tiles OSM visíveis apenas nas cidades do GeoJSON
+- Adicionar pontos com GPS, busca de endereço (Nominatim) e crosshair
+- Apoiar, notar, compartilhar problemas
+- Street View integrado por ponto
+- Mapa de calor (choropleth) por bairro
+- Compartilhar via WhatsApp
+- Camada de riscos oficiais (Defesa Civil 2024)
+- Ranking, votação mensal, conta de usuário
+- Tema claro/escuro com persistência
 
 ## Persistência
 
-Os dados do usuário são salvos no `localStorage` com a chave `mutirao.v1`.  
-A preferência de tema é salva com a chave `mutirao.theme`.
-
-## Mapa (OpenStreetMap — sem API)
-
-Os tiles do mapa vêm diretamente do OpenStreetMap — sem cadastro, sem chave de API, sem custo.  
-Os dados são atualizados continuamente pela comunidade (contribuições chegam em horas).
-
-O tema escuro aplica `filter: invert(100%) hue-rotate(180deg)` sobre o pane das tiles —  
-sem necessidade de um tile server separado para o modo escuro.
-
-## Street View
-
-Cada ponto de problema exibe um botão **Street View**. Ao clicar, abre um overlay com o Street View do Google centralizado nas coordenadas do ponto, sem exigir chave de API.
+| Chave localStorage | Conteúdo |
+|---|---|
+| `mutirao.v1` | Estado completo (pontos, apoios, notas, fotos, votos) |
+| `mutirao.theme` | Preferência de tema (`'light'` / `'dark'`) |
