@@ -268,7 +268,7 @@ function bairroAt(lat,lng){
 
 /* ---------- roteamento ---------- */
 const panel=$('#panel');
-const NAVOF={mapa:'mapa',detalhe:'mapa',pick:'mapa',adicionar:'mapa',sucesso:'mapa',ranking:'ranking',votacao:'votacao',conta:'conta'};
+const NAVOF={mapa:'mapa',detalhe:'mapa',pick:'mapa',adicionar:'mapa',sucesso:'mapa',ranking:'ranking',votacao:'votacao',conta:'conta',alertas:'alertas',panico:'alertas',panicoAdd:'alertas',panicoDetalhe:'alertas',mensagens:'alertas',lider:'alertas',obras:'obras',obraAdd:'obras',obraDetalhe:'obras'};
 function go(v){
   closeMenu();closeSugg();
   if(v!=='detalhe'&&S.sel){select(null)}
@@ -507,7 +507,7 @@ function shareWhatsApp(p){
 
 function renderPanel(){
   const v=S.view;
-  const html=v==='mapa'?vMapa():v==='detalhe'?vDetalhe():v==='ranking'?vRanking():v==='votacao'?vVotacao():v==='conta'?(S.user?vConta():vLogin()):v==='adicionar'?vAdicionar():v==='sucesso'?vSucesso():vMapa();
+  const html=v==='mapa'?vMapa():v==='detalhe'?vDetalhe():v==='ranking'?vRanking():v==='votacao'?vVotacao():v==='conta'?(S.user?vConta():vLogin()):v==='adicionar'?vAdicionar():v==='sucesso'?vSucesso():v==='alertas'?vAlertas():v==='panico'?vPanico():v==='panicoAdd'?vPanicoAdd():v==='panicoDetalhe'?vPanicoDetalhe():v==='obras'?vObras():v==='obraAdd'?vObraAdd():v==='obraDetalhe'?vObraDetalhe():v==='mensagens'?vMensagens():v==='lider'?vLider():vMapa();
   transPanel(html);
 }
 
@@ -627,7 +627,7 @@ function vConta(){
   const done=ms.every(m=>m.v>=m.of);
   return `<div class="pin-inner">
     <div class="dhead"><span class="avatar" style="width:56px;height:56px;font-size:24px;border-color:#0B0B0F">${esc(S.user.name[0].toUpperCase())}</span>
-      <div style="flex:1;min-width:0"><h2>Olá, ${esc(S.user.name)}</h2><p class="sub2">${esc(S.user.login)}</p></div>
+      <div class="row" style="margin-bottom:12px"><button class="btn sec" id="goMsgs">${icon('note','sm')}Mensagens</button><button class="btn sec" id="goLider">${icon('users','sm')}Painel do líder</button></div><div style="flex:1;min-width:0"><h2>Olá, ${esc(S.user.name)}</h2><p class="sub2">${esc(S.user.login)}</p></div>
       <button class="btn ghost" id="logout">Sair</button></div>
     <div class="stats"><div><b>${mine.length}</b><span>pontos marcados</span></div><div><b>${sup}</b><span>apoios dados</span></div><div><b>${votes}</b><span>votos</span></div></div>
     <section style="display:grid;gap:10px"><h3 class="sec">Seus pontos</h3>
@@ -709,7 +709,9 @@ function bindPanel(){
     const area=S.area,id=c.value;need(()=>{S.area=area;S.votes[area]=id;save();go('votacao');toast('Voto registrado.','check')},'votar')});
   on('loginForm','submit',doLogin);
   on('lgToggle','click',()=>{S.create=!S.create;renderPanel()});
-  on('logout','click',()=>{S.user=null;save();renderTop();go('mapa');toast('Você saiu da conta.')});
+  on('goMsgs','click',()=>go('mensagens'));
+  on('goLider','click',()=>{if(S.user){if(S.user.role!=='lider'){S.user.role='lider';save();toast('Modo líder ativado','users');}go('lider');}});
+  on('logout','click',()=>{S.user=null;save();renderTop();go('mapa');toast('Você saiu da conta.');});
   on('aClose','click',()=>{S.draft=null;go('mapa')});
   on('chgLoc','click',()=>{keepDraft();go('pick')});
   on('aPhoto','click',()=>{keepDraft();pickFile('draft')});
@@ -805,7 +807,7 @@ function updatePick(){
 }
 $('#pickCancel').addEventListener('click',()=>{if(S.draft&&S.draft.b)go('adicionar');else{S.draft=null;go('mapa')}});
 $('#pickOk').addEventListener('click',()=>{const c=map.getCenter(),b=bairroAt(c.lat,c.lng);if(!b)return;
-  S.draft=Object.assign(S.draft||{photos:[]},{lat:+c.lat.toFixed(5),lng:+c.lng.toFixed(5),b:b.n,r:b.r});go('adicionar')});
+  S.draft=Object.assign(S.draft||{photos:[]},{lat:+c.lat.toFixed(5),lng:+c.lng.toFixed(5),b:b.n,r:b.r});const ret=S.draft&&S.draft._returnTo;if(ret){S.draft._returnTo=undefined;go(ret);}else go('adicionar');});
 
 /* GPS button */
 document.addEventListener('click',e=>{
@@ -863,7 +865,9 @@ function submitAdd(e){
   $('#fTitle').classList.toggle('err',!(d.t||'').trim());if(!(d.t||'').trim())ok=false;
   if(!ok){(panel.querySelector('.field.err input')||panel.querySelector('.field.err')).focus?.();panel.querySelector('.field.err').scrollIntoView({block:'center',behavior:'smooth'});return}
   const p={id:'u'+Date.now(),t:d.t.trim(),c:d.c,s:d.pal==='paliativo'?'paliativo':'sem',b:d.b,r:d.r,a:1,lat:d.lat,lng:d.lng,created:Date.now(),ref:(d.ref||'').trim(),desc:(d.desc||'').trim(),photos:d.photos||[]};
-  S.mine.push(p);save();S.draft=null;S.lastAdded=p.id;renderMarkers();go('sucesso');
+  S.mine.push(p);save();S.draft=null;S.lastAdded=p.id;renderMarkers();
+renderPanicoMarkers();
+renderObraMarkers();go('sucesso');
   map.setView([p.lat,p.lng],Math.max(map.getZoom(),15));
 }
 let fileFor=null;
@@ -919,9 +923,15 @@ function choose(i,inp){
 /* ---------- menu, filtros, legenda ---------- */
 const menu=$('#menu'),btnMore=$('#btnMore');
 function closeMenu(){menu.hidden=true;btnMore.setAttribute('aria-expanded','false')}
+$('#btnPanico').addEventListener('click',()=>{
+  if(!S.user){toast('Faça login para registrar uma ocorrência de pânico','user');return;}
+  S.draft={};go('panicoAdd');
+});
 btnMore.addEventListener('click',e=>{
   e.stopPropagation();if(!menu.hidden){closeMenu();return}
   menu.innerHTML=`<button data-m="fit">${icon('expand')}Ver Recife inteiro</button>
+    <button data-m="panico">${icon('siren')}Alertas de pânico</button>
+    <button data-m="obras">${icon('obra')}Obras públicas</button>
     <button data-m="choro" id="choroToggle" class="${choroOn?'active':''}" aria-pressed="${choroOn}">${icon('rank')}${choroOn?'Ocultar':'Ver'} mapa de calor</button>
     <button data-m="risk" id="riskToggle" class="${riskVisible?'rk-on':''}" aria-pressed="${riskVisible}">${icon('alert')}${riskVisible?'Ocultar':'Ver'} riscos oficiais</button>
     <button data-m="filt">${icon('filter')}Filtrar pontos</button>
@@ -938,7 +948,7 @@ btnMore.addEventListener('click',e=>{
     const m=b.dataset.m;
     if(m==='morro'){S.morro=!S.morro;document.body.classList.toggle('nomorro',!S.morro);b.setAttribute('aria-pressed',S.morro);save();return}
     closeMenu();
-    if(m==='fit')fitRecife();else if(m==='choro'){closeMenu();toggleChoropleth();}else if(m==='risk'){closeMenu();toggleRiskLayer();}else if(m==='filt')openFilters();else if(m==='leg'){$('#legend').open=true}
+    if(m==='fit')fitRecife();else if(m==='panico'){closeMenu();go('panico');}else if(m==='obras'){closeMenu();go('obras');}else if(m==='choro'){closeMenu();toggleChoropleth();}else if(m==='risk'){closeMenu();toggleRiskLayer();}else if(m==='filt')openFilters();else if(m==='leg'){$('#legend').open=true}
   }));
 });
 document.addEventListener('click',e=>{if(!menu.hidden&&!menu.contains(e.target)&&e.target!==btnMore)closeMenu()});
@@ -976,6 +986,419 @@ document.addEventListener('keydown',e=>{
 });
 window.addEventListener('resize',()=>map.invalidateSize());
 
+
+
+/* ══════════════════════════════════════════════════════════
+   F1 · PÂNICO  F2-F3 · OBRAS  F4 · MENSAGENS  F5 · INTEGRAÇÃO
+   ══════════════════════════════════════════════════════════ */
+
+const PANICO_TIPO={
+  deslizamento:{n:'Deslizamento de terra',color:'#92400E'},
+  alagamento:  {n:'Alagamento / transbordamento',color:'#1D4ED8'},
+  desabamento: {n:'Desabamento estrutural',color:'#7C2D12'},
+  arvore:      {n:'Árvore ou poste caído',color:'#065F46'},
+  via:         {n:'Via interditada',color:'#1E3A8A'},
+  ponte:       {n:'Dano em ponte',color:'#9D174D'},
+  outro:       {n:'Outra emergência',color:'#4B5563'},
+};
+const PANICO_SEV={
+  critico:{n:'Crítico — risco de vida imediato',color:'#DC2626'},
+  alto:   {n:'Alto — risco imediato',color:'#EA580C'},
+  medio:  {n:'Médio — atenção necessária',color:'#D97706'},
+};
+const OBRA_ST={
+  em_andamento:   {n:'Em andamento',   color:'#2563EB',ic:'clock'},
+  atrasada:       {n:'Atrasada',       color:'#DC2626',ic:'alert'},
+  em_conclusao:   {n:'Em conclusão',   color:'#D97706',ic:'check'},
+  em_inauguracao: {n:'Em inauguração', color:'#059669',ic:'check'},
+  nunca_concluida:{n:'Nunca concluída',color:'#9D174D',ic:'lock'},
+};
+
+const KEY_P='mutirao.panics',KEY_O='mutirao.obras',KEY_M='mutirao.msgs';
+S.panics  =JSON.parse(localStorage.getItem(KEY_P)||'[]');
+S.obras   =JSON.parse(localStorage.getItem(KEY_O)||'[]');
+S.messages=JSON.parse(localStorage.getItem(KEY_M)||'[]');
+S.selP=null;S.selO=null;
+if(S.user&&!S.user.role)S.user.role='morador';
+function saveP(){try{localStorage.setItem(KEY_P,JSON.stringify(S.panics))}catch(e){}}
+function saveO(){try{localStorage.setItem(KEY_O,JSON.stringify(S.obras))}catch(e){}}
+function saveM(){try{localStorage.setItem(KEY_M,JSON.stringify(S.messages))}catch(e){}}
+
+function timeAgo(ts){
+  const m=Math.floor((Date.now()-ts)/60000);
+  if(m<2)return 'agora mesmo';if(m<60)return m+' min atrás';
+  const h=Math.floor(m/60);if(h<24)return h+' h atrás';
+  return tempo(Math.floor(m/1440))+' atrás';
+}
+function computeObraStatus(o){
+  const n=Date.now(),Y2=2*365*86400000;
+  if(o.conclusao_verificada)return 'em_inauguracao';
+  if(o.conclusao_admin)return 'em_conclusao';
+  if(o.previsao&&o.previsao<n){if(o.inicio&&(n-o.inicio)>Y2)return 'nunca_concluida';return 'atrasada';}
+  return 'em_andamento';
+}
+function obraBadge(o){
+  const st=computeObraStatus(o),c=OBRA_ST[st];
+  return `<span class="obra-badge" style="background:${c.color}1A;color:${c.color};border:1px solid ${c.color}44">${icon(c.ic,'sm')} ${c.n}</span>`;
+}
+function panicoBadge(sev){
+  const c=PANICO_SEV[sev]||PANICO_SEV.critico;
+  return `<span class="obra-badge" style="background:${c.color}1A;color:${c.color};border:1px solid ${c.color}44">${c.n}</span>`;
+}
+
+const pgLayer=L.layerGroup().addTo(map);
+const ogLayer=L.layerGroup().addTo(map);
+function renderPanicoMarkers(){
+  pgLayer.clearLayers();
+  S.panics.filter(p=>p.pSt!=='resolvido').forEach(p=>{
+    const col=(PANICO_SEV[p.sev]||PANICO_SEV.critico).color;
+    const m=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',
+      html:`<div class="pin-panico" style="--pc:${col}">${icon('alert')}</div>`,
+      iconSize:[44,54],iconAnchor:[22,54]}),title:p.t,zIndexOffset:900});
+    m.on('click',()=>{S.selP=p.id;go('panicoDetalhe');});
+    pgLayer.addLayer(m);
+  });
+}
+function renderObraMarkers(){
+  ogLayer.clearLayers();
+  S.obras.forEach(o=>{
+    const st=computeObraStatus(o),col=OBRA_ST[st].color;
+    const m=L.marker([o.lat,o.lng],{icon:L.divIcon({className:'',
+      html:`<div class="pin-obra-map" style="--pc:${col}">${icon('obra')}</div>`,
+      iconSize:[44,54],iconAnchor:[22,54]}),title:o.t});
+    m.on('click',()=>{S.selO=o.id;go('obraDetalhe');});
+    ogLayer.addLayer(m);
+  });
+}
+
+function vPanico(){
+  const ativos=S.panics.filter(p=>p.pSt!=='resolvido');
+  return `<div class="pin-inner">
+    <div class="dhead">
+      <div style="flex:1"><span class="eyebrow">Alertas de emergência</span>
+        <h2>${icon('siren','sm')} Pânico · ${ativos.length} ${ativos.length===1?'ativo':'ativos'}</h2></div>
+      ${S.user?`<button class="btn acc" id="btnNovoPanico" style="background:#DC2626;border-color:#DC2626">${icon('alert','sm')}Registrar</button>`:''}
+    </div>
+    <div class="card" style="background:#FEF2F2;border:1.5px solid #FECACA;margin-bottom:12px">
+      ${icon('alert','sm')}<p style="margin:0;font-size:.82rem;color:#991B1B;display:inline"><b>Em risco de vida?</b> Ligue agora: <b>Bombeiros 193</b> · <b>SAMU 192</b> · <b>Defesa Civil 199</b></p>
+    </div>
+    ${ativos.length===0?`<p class="empty-state">Nenhuma ocorrência ativa.${S.user?' Use o botão acima para registrar uma emergência.':' Faça login para registrar.'}</p>`:''}
+    ${ativos.map(p=>{const col=(PANICO_SEV[p.sev]||PANICO_SEV.critico).color;return `<div class="card panic-card" data-pid="${p.id}" style="border-left:4px solid ${col};cursor:pointer;margin-bottom:8px">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="flex:none;width:36px;height:36px;border-radius:50%;background:${col}22;display:grid;place-items:center;color:${col}">${icon('alert')}</div>
+        <div style="flex:1;min-width:0"><b>${esc(p.t)}</b>
+          <div class="sub2">${esc((PANICO_TIPO[p.tipo]||{n:p.tipo}).n)} · ${esc(p.b)} · ${timeAgo(p.created)}</div>
+          ${panicoBadge(p.sev)}
+        </div>
+      </div></div>`;}).join('')}
+    ${S.panics.filter(p=>p.pSt==='resolvido').length>0?`<details style="margin-top:12px"><summary style="cursor:pointer;color:var(--ink-2);font-size:.85rem">Ver resolvidos (${S.panics.filter(p=>p.pSt==='resolvido').length})</summary>
+      ${S.panics.filter(p=>p.pSt==='resolvido').slice(0,5).map(p=>`<div class="card" style="opacity:.6;margin-top:6px"><b>${esc(p.t)}</b></div>`).join('')}</details>`:''}
+  </div>`;
+}
+
+function vPanicoAdd(){
+  const d=S.draft||{};
+  return `<form class="pin-inner" id="panicForm" novalidate>
+    <div class="dhead"><div style="flex:1"><span class="eyebrow" style="color:#DC2626">🚨 Alerta de emergência</span><h2>Registrar ocorrência</h2></div>
+      <button type="button" class="iconbtn" id="pClose">${icon('close')}</button></div>
+    <div class="card" style="background:#FEF2F2;border:1.5px solid #FECACA;margin-bottom:12px">
+      ${icon('alert','sm')}<p style="margin:0;font-size:.8rem;color:#991B1B;display:inline"><b>Em risco de vida?</b> Ligue agora: Bombeiros 193 · SAMU 192 · Defesa Civil 199</p>
+    </div>
+    <div class="card kv" style="margin-bottom:12px">
+      <div style="flex:1"><b>${esc(d.b||'Localização não selecionada')}</b><div class="sub2">Local da ocorrência · RPA ${d.r||'—'}</div></div>
+      <button type="button" class="btn ghost" id="pChgLoc">Alterar</button>
+    </div>
+    <div class="field"><label class="flabel">Título / descrição rápida <span style="color:var(--err)">*</span></label>
+      <input type="text" id="pTitle" class="input" placeholder="Ex: Deslizamento na Rua das Flores" value="${esc(d.pTitle||'')}" maxlength="80" autocomplete="off">
+      <span class="ferr" id="pTitleErr">${icon('alert','sm')}Informe uma descrição.</span></div>
+    <fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="flabel">Tipo de ocorrência</legend>
+      <div class="cats">${Object.keys(PANICO_TIPO).map(k=>`<label class="choice"><input type="radio" name="ptipo" value="${k}"${d.ptipo===k?' checked':''}><span>${esc(PANICO_TIPO[k].n)}</span></label>`).join('')}</div>
+      <span class="ferr" id="pTipoErr">${icon('alert','sm')}Escolha o tipo.</span></fieldset>
+    <fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="flabel">Nível de gravidade</legend>
+      <div class="cats">${Object.keys(PANICO_SEV).map(k=>`<label class="choice"><input type="radio" name="psev" value="${k}"${d.psev===k?' checked':''}><span style="border-left:3px solid ${PANICO_SEV[k].color};padding-left:8px">${esc(PANICO_SEV[k].n)}</span></label>`).join('')}</div>
+      <span class="ferr" id="pSevErr">${icon('alert','sm')}Escolha a gravidade.</span></fieldset>
+    <div class="field"><label class="flabel">Descrição detalhada</label>
+      <textarea id="pDesc" class="textarea" rows="3" placeholder="Descreva o que está acontecendo, riscos, acessos bloqueados...">${esc(d.pDesc||'')}</textarea></div>
+    <div class="row">
+      <button type="button" class="btn sec" id="pCancel">Cancelar</button>
+      <button type="submit" class="btn acc" style="background:#DC2626;border-color:#DC2626">${icon('alert','sm')} Registrar ocorrência</button>
+    </div></form>`;
+}
+
+function vPanicoDetalhe(){
+  const p=S.panics.find(x=>x.id===S.selP);if(!p)return vPanico();
+  const col=(PANICO_SEV[p.sev]||PANICO_SEV.critico).color;
+  const isMine=p.criadoPor===(S.user&&S.user.name);
+  const isLider=S.user&&S.user.role==='lider';
+  const stLabel={acontecendo:'⚡ Acontecendo',nao_verificado:'⚠ Não verificado',resolvido:'✓ Resolvido'};
+  return `<div class="pin-inner">
+    <div class="dhead">
+      <div style="flex:1;display:grid;gap:6px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${panicoBadge(p.sev)}<span class="obra-badge">${stLabel[p.pSt]||p.pSt}</span></div>
+        <h2>${esc(p.t)}</h2>
+        <p class="sub2">${esc((PANICO_TIPO[p.tipo]||{n:p.tipo}).n)} · ${esc(p.b)} · ${timeAgo(p.created)}</p>
+      </div>
+      <button class="iconbtn" id="pdBack">${icon('close')}</button>
+    </div>
+    ${p.desc?`<div class="card"><p style="margin:0">${esc(p.desc)}</p></div>`:''}
+    <div class="card kv" style="cursor:pointer" id="pdMap">
+      ${icon('pin','sm')}<div style="flex:1"><b>Ver no mapa</b><div class="sub2">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div></div>${icon('arrow','sm')}
+    </div>
+    <div class="card" style="background:#FEF2F2;border:1.5px solid #FECACA;margin-top:8px">
+      ${icon('alert','sm')}<p style="margin:0;font-size:.8rem;color:#991B1B;display:inline">Em risco: <b>Bombeiros 193</b> · <b>SAMU 192</b> · <b>Defesa Civil 199</b></p>
+    </div>
+    ${(isMine||isLider)&&p.pSt!=='resolvido'?`<div class="row" style="margin-top:12px">
+      <button class="btn acc" id="pdResolve" style="background:#059669;border-color:#059669;width:100%">${icon('check','sm')} Marcar como resolvido</button>
+    </div>`:''}
+  </div>`;
+}
+
+function vObras(){
+  const grupos=Object.keys(OBRA_ST).map(st=>({st,obras:S.obras.filter(o=>computeObraStatus(o)===st)})).filter(g=>g.obras.length>0);
+  return `<div class="pin-inner">
+    <div class="dhead">
+      <div style="flex:1"><span class="eyebrow">Fiscalização comunitária</span><h2>Obras Públicas</h2></div>
+      ${S.user?`<button class="btn acc" id="btnNovaObra">${icon('obra','sm')}Registrar</button>`:''}
+    </div>
+    ${grupos.length===0?`<p class="empty-state">Nenhuma obra registrada ainda.${S.user?' Use o botão acima.':' Faça login para registrar.'}</p>`:''}
+    ${grupos.map(({st,obras})=>{const cfg=OBRA_ST[st];return `<div style="margin-bottom:16px">
+      <h3 class="sec" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${cfg.color};flex:none"></span>${cfg.n}<span class="badge-cnt">${obras.length}</span>
+      </h3>
+      ${obras.map(o=>`<div class="card obra-card" data-oid="${o.id}" style="cursor:pointer;margin-bottom:6px">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <div style="flex:none;width:36px;height:36px;border-radius:10px;background:${cfg.color}1A;display:grid;place-items:center;color:${cfg.color}">${icon('obra')}</div>
+          <div style="flex:1;min-width:0"><b>${esc(o.t)}</b>
+            <div class="sub2">${esc(o.b)}${o.orgao?' · '+esc(o.orgao):''}${o.previsao?' · '+new Date(o.previsao).toLocaleDateString('pt-BR'):''}</div>
+            ${obraBadge(o)}
+          </div>
+        </div></div>`).join('')}
+    </div>`;}).join('')}
+  </div>`;
+}
+
+function vObraAdd(){
+  const d=S.draft||{};const today=new Date().toISOString().split('T')[0];
+  return `<form class="pin-inner" id="obraForm" novalidate>
+    <div class="dhead"><div style="flex:1"><span class="eyebrow">Nova obra</span><h2>Registrar Obra Pública</h2></div>
+      <button type="button" class="iconbtn" id="oClose">${icon('close')}</button></div>
+    <div class="card kv" style="margin-bottom:12px">
+      <div style="flex:1"><b>${esc(d.b||'Localização não selecionada')}</b><div class="sub2">Local da obra</div></div>
+      <button type="button" class="btn ghost" id="oChgLoc">Alterar</button>
+    </div>
+    <div class="field"><label class="flabel">Nome da obra <span style="color:var(--err)">*</span></label>
+      <input type="text" id="oTitle" class="input" placeholder="Ex: Pavimentação da Rua X" maxlength="100">
+      <span class="ferr" id="oTitleErr">${icon('alert','sm')}Informe o nome da obra.</span></div>
+    <div class="field"><label class="flabel">Órgão responsável</label>
+      <input type="text" id="oOrgao" class="input" placeholder="Ex: Secretaria de Infraestrutura" maxlength="80"></div>
+    <div class="field"><label class="flabel">Data de início</label>
+      <input type="date" id="oInicio" class="input" max="${today}"></div>
+    <div class="field"><label class="flabel">Data prevista de conclusão</label>
+      <input type="date" id="oPrevisao" class="input"></div>
+    <div class="field"><label class="flabel">Descrição / observações</label>
+      <textarea id="oDesc" class="textarea" rows="3" placeholder="O que foi prometido, situação atual, irregularidades observadas..."></textarea></div>
+    <div class="row">
+      <button type="button" class="btn sec" id="oCancel">Cancelar</button>
+      <button type="submit" class="btn acc">${icon('check','sm')}Registrar obra</button>
+    </div></form>`;
+}
+
+function vObraDetalhe(){
+  const o=S.obras.find(x=>x.id===S.selO);if(!o)return vObras();
+  const isMine=o.criadoPor===(S.user&&S.user.name);
+  const isLider=S.user&&S.user.role==='lider';
+  return `<div class="pin-inner">
+    <div class="dhead">
+      <div style="flex:1;display:grid;gap:6px">
+        ${obraBadge(o)}<h2>${esc(o.t)}</h2>
+        <p class="sub2">${esc(o.b)}${o.orgao?' · '+esc(o.orgao):''}${o.previsao?' · Previsão: '+new Date(o.previsao).toLocaleDateString('pt-BR'):''}</p>
+      </div>
+      <button class="iconbtn" id="odBack">${icon('close')}</button>
+    </div>
+    ${o.desc?`<div class="card"><p style="margin:0">${esc(o.desc)}</p></div>`:''}
+    <div class="card kv" style="cursor:pointer;margin-top:8px" id="odMap">
+      ${icon('pin','sm')}<div style="flex:1"><b>Ver no mapa</b><div class="sub2">${o.lat.toFixed(5)}, ${o.lng.toFixed(5)}</div></div>${icon('arrow','sm')}
+    </div>
+    <h3 class="sec" style="margin-top:16px">Histórico (${(o.historico||[]).length} atualizações)</h3>
+    ${(o.historico||[]).length===0?`<p class="sub2">Nenhuma atualização registrada.</p>`:''}
+    ${(o.historico||[]).slice().reverse().map(h=>`<div class="card" style="margin-bottom:6px">
+      <div class="sub2">${new Date(h.ts).toLocaleDateString('pt-BR')} · ${esc(h.por)}</div>
+      <p style="margin:4px 0 0">${esc(h.texto)}</p>
+    </div>`).join('')}
+    ${(isMine||isLider)?`<div class="field" style="margin-top:12px">
+      <label class="flabel">Adicionar atualização</label>
+      <textarea id="oUpdTxt" class="textarea" rows="2" placeholder="O que está acontecendo com esta obra?"></textarea>
+      <div class="row" style="margin-top:8px">
+        ${!o.conclusao_admin?`<button class="btn sec" id="odConcAdmin">Declarar concluída</button>`:''}
+        ${!o.conclusao_verificada?`<button class="btn sec" id="odVerify" style="color:#059669;border-color:#059669">${icon('eye','sm')}Verificar conclusão</button>`:''}
+        <button class="btn acc" id="odAddUpd">${icon('check','sm')}Atualizar</button>
+      </div>
+    </div>`:''}
+  </div>`;
+}
+
+function vMensagens(){
+  if(!S.user) return `<div class="pin-inner"><p class="empty-state">Faça login para acessar mensagens.</p><button class="btn acc" id="msgLogin" style="width:100%">${icon('user','sm')}Fazer login</button></div>`;
+  const minhas=S.messages.filter(m=>m.de===S.user.name);
+  const novasRespostas=minhas.filter(m=>m.resposta&&!m.respLida).length;
+  return `<div class="pin-inner">
+    <div class="dhead"><div style="flex:1"><span class="eyebrow">Comunicação comunitária</span><h2>Mensagem ao Líder</h2></div></div>
+    ${novasRespostas>0?`<div class="card" style="background:var(--primary-soft);border:1px solid var(--primary);margin-bottom:12px">
+      ${icon('note','sm')}<b style="display:inline"> ${novasRespostas} resposta${novasRespostas>1?'s':''} do líder comunitário</b>
+    </div>`:''}
+    <div class="field">
+      <label class="flabel">Mensagem para o líder de ${esc(S.user.bairro||'seu bairro')}</label>
+      <textarea id="msgTxt" class="textarea" rows="3" placeholder="Descreva sua solicitação, dúvida ou relato..."></textarea>
+      <span class="ferr" id="msgErr">${icon('alert','sm')}Escreva uma mensagem antes de enviar.</span>
+      <button class="btn acc" id="enviarMsg" style="margin-top:8px;width:100%">${icon('share','sm')}Enviar mensagem</button>
+    </div>
+    <h3 class="sec" style="margin-top:16px">Histórico</h3>
+    ${minhas.length===0?`<p class="empty-state">Você ainda não enviou mensagens.</p>`:''}
+    ${minhas.slice().reverse().map(m=>`<div class="card" style="margin-bottom:8px">
+      <div class="sub2">${new Date(m.ts).toLocaleDateString('pt-BR')} · Para o líder de ${esc(m.bairro)}</div>
+      <p style="margin:4px 0">${esc(m.texto)}</p>
+      ${m.resposta?`<div class="card" style="background:var(--primary-soft);margin-top:8px">
+        <b>Resposta do líder:</b><p style="margin:4px 0 0">${esc(m.resposta.texto)}</p>
+        <div class="sub2">${new Date(m.resposta.ts).toLocaleDateString('pt-BR')}</div>
+      </div>`:``}
+    </div>`).join('')}
+  </div>`;
+}
+
+function vLider(){
+  if(!S.user||S.user.role!=='lider') return vAlertas();
+  const bairro=S.user.bairro;
+  const msgs=S.messages.filter(m=>m.bairro===bairro);
+  const panicosLocal=S.panics.filter(p=>p.b===bairro&&p.pSt!=='resolvido');
+  const obrasLocal=S.obras.filter(o=>o.b===bairro);
+  return `<div class="pin-inner">
+    <div class="dhead"><div style="flex:1"><span class="eyebrow">Painel do Líder</span><h2>${icon('users','sm')} ${esc(bairro)}</h2></div></div>
+    ${panicosLocal.length>0?`<div class="card" style="background:#FEF2F2;border:1.5px solid #FECACA;margin-bottom:12px">
+      ${icon('alert','sm')}<b style="display:inline;color:#991B1B"> ${panicosLocal.length} alerta${panicosLocal.length>1?'s':''} ativo${panicosLocal.length>1?'s':''} em ${esc(bairro)}</b>
+      <div style="margin-top:8px">${panicosLocal.map(p=>`<div class="sub2" style="margin-top:4px">${icon('alert','sm')} ${esc(p.t)} — ${timeAgo(p.created)}</div>`).join('')}</div>
+    </div>`:``}
+    <h3 class="sec" style="margin-top:4px">Mensagens dos moradores (${msgs.length})</h3>
+    ${msgs.length===0?`<p class="empty-state">Nenhuma mensagem recebida.</p>`:''}
+    ${msgs.slice().reverse().map(m=>`<div class="card" style="margin-bottom:8px">
+      <div class="sub2">${esc(m.de)} · ${new Date(m.ts).toLocaleDateString('pt-BR')}</div>
+      <p style="margin:4px 0">${esc(m.texto)}</p>
+      ${m.resposta?`<div class="card" style="background:var(--primary-soft);margin-top:6px"><b>Sua resposta:</b> ${esc(m.resposta.texto)}</div>`:
+      `<div class="field" style="margin-top:8px">
+        <input type="text" class="input msg-reply" data-mid="${m.id}" placeholder="Responder..." style="font-size:.85rem">
+        <button class="btn acc reply-btn" data-mid="${m.id}" style="margin-top:6px;width:100%">${icon('share','sm')}Responder</button>
+      </div>`}
+    </div>`).join('')}
+    <h3 class="sec" style="margin-top:12px">Obras em ${esc(bairro)} (${obrasLocal.length})</h3>
+    ${obrasLocal.map(o=>`<div class="card obra-card" data-oid="${o.id}" style="cursor:pointer;margin-bottom:6px"><b>${esc(o.t)}</b> ${obraBadge(o)}</div>`).join('')}
+    ${obrasLocal.length===0?`<p class="empty-state">Nenhuma obra em ${esc(bairro)}.</p>`:''}
+  </div>`;
+}
+
+function vAlertas(){
+  const nPanico=S.panics.filter(p=>p.pSt!=='resolvido').length;
+  if(S.user&&S.user.role==='lider') return vLider();
+  if(!S.user) return `<div class="pin-inner">
+    <div class="dhead"><div style="flex:1"><span class="eyebrow">Alertas</span><h2>Pânico & Mensagens</h2></div></div>
+    <p class="empty-state">Faça login para acessar alertas e mensagens ao líder comunitário.</p>
+    <button class="btn acc" id="alertLogin" style="width:100%">${icon('user','sm')}Fazer login</button>
+  </div>`;
+  return `<div class="pin-inner">
+    <div class="dhead"><div style="flex:1"><span class="eyebrow">Central</span><h2>Alertas & Comunicação</h2></div></div>
+    <div class="card kv" id="goToPanico" style="cursor:pointer;margin-bottom:8px">
+      <div style="width:40px;height:40px;border-radius:10px;background:#FEF2F2;display:grid;place-items:center;color:#DC2626;flex:none">${icon('alert')}</div>
+      <div style="flex:1"><b>Ocorrências Pânico</b><div class="sub2">${nPanico} ${nPanico===1?'alerta ativo':'alertas ativos'}</div></div>${icon('arrow','sm')}
+    </div>
+    <div class="card kv" id="goToMsgs" style="cursor:pointer;margin-bottom:8px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-soft);display:grid;place-items:center;color:var(--primary);flex:none">${icon('note')}</div>
+      <div style="flex:1"><b>Mensagem ao líder</b><div class="sub2">${esc(S.user.bairro)}</div></div>${icon('arrow','sm')}
+    </div>
+    <div class="card kv" id="goToObras" style="cursor:pointer">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;flex:none">${icon('obra')}</div>
+      <div style="flex:1"><b>Obras Públicas</b><div class="sub2">${S.obras.filter(o=>o.b===S.user.bairro).length} em ${esc(S.user.bairro)}</div></div>${icon('arrow','sm')}
+    </div>
+  </div>`;
+}
+
+function bindNewFeatures(v){
+  if(v==='alertas'){on('goToPanico','click',()=>go('panico'));on('goToMsgs','click',()=>go('mensagens'));on('goToObras','click',()=>go('obras'));on('alertLogin','click',()=>go('conta'));}
+  if(v==='panico'){
+    on('btnNovoPanico','click',()=>{if(!S.user){toast('Faça login para registrar','user');return;}S.draft={};go('panicoAdd');});
+    document.querySelectorAll('.panic-card').forEach(c=>c.addEventListener('click',()=>{S.selP=c.dataset.pid;go('panicoDetalhe');}));
+  }
+  if(v==='panicoAdd'){
+    on('pClose','click',()=>go('panico'));on('pCancel','click',()=>go('panico'));
+    on('pChgLoc','click',()=>{S.draft=Object.assign(S.draft||{},{_returnTo:'panicoAdd'});go('pick');});
+    on('panicForm','submit',e=>{
+      e.preventDefault();
+      const t=$('#pTitle').value.trim(),tipo=document.querySelector('[name="ptipo"]:checked'),sev=document.querySelector('[name="psev"]:checked');
+      let ok=true;
+      if(!t){$('#pTitleErr').style.display='flex';ok=false;}else $('#pTitleErr').style.display='none';
+      if(!tipo){$('#pTipoErr').style.display='flex';ok=false;}else $('#pTipoErr').style.display='none';
+      if(!sev){$('#pSevErr').style.display='flex';ok=false;}else $('#pSevErr').style.display='none';
+      if(!ok)return;if(!S.draft||!S.draft.lat){toast('Selecione um local no mapa','pin');return;}
+      const p={id:'p'+Date.now(),t,tipo:tipo.value,sev:sev.value,desc:$('#pDesc').value.trim(),
+        b:S.draft.b,r:S.draft.r,lat:S.draft.lat,lng:S.draft.lng,
+        pSt:'acontecendo',criadoPor:S.user.name,created:Date.now()};
+      S.panics.push(p);saveP();S.draft=null;renderPanicoMarkers();toast('Ocorrência registrada','check');go('panico');
+    });
+  }
+  if(v==='panicoDetalhe'){
+    on('pdBack','click',()=>go('panico'));
+    on('pdMap','click',()=>{const p=S.panics.find(x=>x.id===S.selP);if(p){map.flyTo([p.lat,p.lng],16,{animate:true,duration:.5});go('mapa');}});
+    on('pdResolve','click',()=>{const p=S.panics.find(x=>x.id===S.selP);if(p){p.pSt='resolvido';saveP();renderPanicoMarkers();toast('Resolvido','check');go('panico');}});
+  }
+  if(v==='obras'){
+    on('btnNovaObra','click',()=>{if(!S.user){toast('Faça login para registrar','user');return;}S.draft={};go('obraAdd');});
+    document.querySelectorAll('.obra-card').forEach(c=>c.addEventListener('click',()=>{S.selO=c.dataset.oid;go('obraDetalhe');}));
+  }
+  if(v==='obraAdd'){
+    on('oClose','click',()=>go('obras'));on('oCancel','click',()=>go('obras'));
+    on('oChgLoc','click',()=>{S.draft=Object.assign(S.draft||{},{_returnTo:'obraAdd'});go('pick');});
+    on('obraForm','submit',e=>{
+      e.preventDefault();const t=$('#oTitle').value.trim();
+      if(!t){$('#oTitleErr').style.display='flex';return;}$('#oTitleErr').style.display='none';
+      if(!S.draft||!S.draft.lat){toast('Selecione um local no mapa','pin');return;}
+      const inicio=$('#oInicio').value?new Date($('#oInicio').value).getTime():null;
+      const previsao=$('#oPrevisao').value?new Date($('#oPrevisao').value).getTime():null;
+      const o={id:'o'+Date.now(),t,orgao:$('#oOrgao').value.trim(),desc:$('#oDesc').value.trim(),
+        b:S.draft.b,r:S.draft.r,lat:S.draft.lat,lng:S.draft.lng,
+        inicio,previsao,historico:[],conclusao_admin:null,conclusao_verificada:false,
+        criadoPor:S.user.name,created:Date.now()};
+      S.obras.push(o);saveO();S.draft=null;renderObraMarkers();toast('Obra registrada','check');go('obras');
+    });
+  }
+  if(v==='obraDetalhe'){
+    on('odBack','click',()=>go('obras'));
+    on('odMap','click',()=>{const o=S.obras.find(x=>x.id===S.selO);if(o){map.flyTo([o.lat,o.lng],16,{animate:true,duration:.5});go('mapa');}});
+    on('odAddUpd','click',()=>{const o=S.obras.find(x=>x.id===S.selO),txt=$('#oUpdTxt').value.trim();
+      if(!o||!txt){toast('Descreva a atualização','note');return;}
+      (o.historico=o.historico||[]).push({ts:Date.now(),por:S.user.name,texto:txt,st:computeObraStatus(o)});
+      saveO();renderObraMarkers();toast('Atualização registrada','check');go('obraDetalhe');});
+    on('odConcAdmin','click',()=>{const o=S.obras.find(x=>x.id===S.selO);if(!o)return;
+      o.conclusao_admin=Date.now();(o.historico=o.historico||[]).push({ts:Date.now(),por:S.user.name,texto:'Obra declarada concluída administrativamente.',st:'em_conclusao'});
+      saveO();renderObraMarkers();go('obraDetalhe');toast('Conclusão registrada','check');});
+    on('odVerify','click',()=>{const o=S.obras.find(x=>x.id===S.selO);if(!o)return;
+      o.conclusao_verificada=true;(o.historico=o.historico||[]).push({ts:Date.now(),por:S.user.name,texto:'Conclusão verificada pela comunidade.',st:'em_inauguracao'});
+      saveO();renderObraMarkers();go('obraDetalhe');toast('Verificação registrada','check');});
+  }
+  if(v==='mensagens'){
+    on('msgLogin','click',()=>go('conta'));
+    on('enviarMsg','click',()=>{if(!S.user)return;
+      const txt=$('#msgTxt').value.trim();if(!txt){$('#msgErr').style.display='flex';return;}$('#msgErr').style.display='none';
+      const m={id:'m'+Date.now(),de:S.user.name,bairro:S.user.bairro||'',texto:txt,ts:Date.now(),resposta:null,respLida:false};
+      S.messages.push(m);saveM();$('#msgTxt').value='';toast('Mensagem enviada ao líder','check');go('mensagens');});
+  }
+  if(v==='lider'){
+    document.querySelectorAll('.reply-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      const mid=btn.dataset.mid,m=S.messages.find(x=>x.id===mid);
+      const inp=document.querySelector(`.msg-reply[data-mid="${mid}"]`);
+      if(!m||!inp||!inp.value.trim()){toast('Escreva uma resposta','note');return;}
+      m.resposta={texto:inp.value.trim(),ts:Date.now()};saveM();toast('Resposta enviada','check');go('lider');
+    }));
+    document.querySelectorAll('.obra-card').forEach(c=>c.addEventListener('click',()=>{S.selO=c.dataset.oid;go('obraDetalhe');}));
+  }
+}
+
 /* ---------- início ---------- */
 $('#legend').open=isDesk();fitRecife();
 renderTop();renderMarkers();
@@ -983,4 +1406,5 @@ const h=(location.hash||'').slice(1);
 if(h&&byId(h))openDetail(h);
 else if(['ranking','votacao','conta'].includes(h))go(h);
 else go('mapa');
+  bindNewFeatures(v);
 })();
