@@ -1,5 +1,19 @@
 # CHANGELOG — Mutirão · Recife
 
+## [1.7.1] — Toasts + modularização inicial — 2026-11-11
+
+### Fixed
+- Toasts não sumiam: `animationend` não dispara com `prefers-reduced-motion`. Agora há fallback por timeout e token de geração para não misturar timers.
+- `bindNewFeatures` ligado ao fim de `bindPanel` (listeners da Fase 1 após cada render).
+- Marcadores de pânico/obra redesenhados no boot.
+- Painel mobile lista views da Fase 1 (tela cheia).
+
+### Changed
+- `src/js/core/toast.js`, `util.js`, `constants.js` extraídos.
+- `src/js/services/geocode.js`, `gps.js`, `share.js` extraídos.
+- `app.js` delega `toast` a `Mutirao.toast`.
+
+
 ## [Unreleased] — 2026-11-05
 
 ### Fixed (8 bugs CSS corrigidos)

@@ -138,8 +138,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   .panel{display:none}
   body[data-view="detalhe"] .panel{display:block;left:0;right:0;bottom:0;max-height:74%;border-radius:22px 22px 0 0;box-shadow:0 -8px 30px rgba(10,20,50,.25)}
   body[data-view="detalhe"] .panel::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--line-soft);margin:10px auto 0}
-  body:is([data-view="ranking"],[data-view="votacao"],[data-view="conta"],[data-view="adicionar"],[data-view="sucesso"]) .panel{display:block;inset:0}
-  body:is([data-view="ranking"],[data-view="votacao"],[data-view="conta"],[data-view="adicionar"],[data-view="sucesso"]) .maptools{display:none}
+  body:is([data-view="ranking"],[data-view="votacao"],[data-view="conta"],[data-view="adicionar"],[data-view="sucesso"],[data-view="alertas"],[data-view="panico"],[data-view="panicoAdd"],[data-view="panicoDetalhe"],[data-view="obras"],[data-view="obraAdd"],[data-view="obraDetalhe"],[data-view="mensagens"],[data-view="lider"]) .panel{display:block;inset:0}
+  body:is([data-view="ranking"],[data-view="votacao"],[data-view="conta"],[data-view="adicionar"],[data-view="sucesso"],[data-view="alertas"],[data-view="panico"],[data-view="panicoAdd"],[data-view="panicoDetalhe"],[data-view="obras"],[data-view="obraAdd"],[data-view="obraDetalhe"],[data-view="mensagens"],[data-view="lider"]) .maptools{display:none}
 }
 /* computador */
 @media (min-width:960px){

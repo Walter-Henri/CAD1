@@ -373,17 +373,9 @@ function modal(html,init,onCancel){
   init&&init(sc);
 }
 function closeModal(cancel){const sc=$('#scrim');if(sc)sc.remove();if(cancel&&modalClose)modalClose();modalClose=null}
-let toastT=null;
-function toast(msg,ic){
-  let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}
-  t.classList.remove('toast-out');
-  t.innerHTML=(ic?icon(ic,'sm'):'')+esc(msg);t.hidden=false;
-  clearTimeout(toastT);
-  toastT=setTimeout(()=>{
-    t.classList.add('toast-out');
-    t.addEventListener('animationend',()=>{t.hidden=true;t.classList.remove('toast-out');},{once:true});
-  },3100);
-}
+/* Toasts: implementação em core/toast.js */
+const toast=function(msg,ic){return Mutirao.toast(msg,ic);};
+
 function share(p){
   const txt=`${p.t} (${p.b}). ${apoios(p)} ${apoios(p)===1?'vizinho já apoia':'vizinhos já apoiam'} no Mutirão. Você também vê isso? Entre no Mutirão e apoie para a associação levar ao vereador.`;
   const fallback=()=>modal(`<h2 id="mt">Copie e mande no grupo</h2><textarea class="textarea" id="shTxt" readonly>${esc(txt)}</textarea><button class="btn pri" data-close>Pronto</button>`,m=>{const ta=m.querySelector('#shTxt');ta.focus();ta.select()});
@@ -719,6 +711,8 @@ function bindPanel(){
   on('addForm','submit',submitAdd);
   on('sShare','click',()=>share(byId(S.lastAdded)));
   on('sSee','click',()=>openDetail(S.lastAdded));
+  // Fase 1: bind after each panel render (on is in this closure)
+  bindNewFeatures(S.view, on);
 }
 function openDetail(id){const p=byId(id);if(!p)return;
   if(!shown().includes(p)){S.filt.cats.add(p.c);S.filt.st.add(p.s);renderMarkers()}
@@ -1319,7 +1313,8 @@ function vAlertas(){
   </div>`;
 }
 
-function bindNewFeatures(v){
+function bindNewFeatures(v,on){
+  if(typeof on!=='function'){on=(id,ev,fn)=>{const el=panel.querySelector('#'+id);if(el)el.addEventListener(ev,fn)};}
   if(v==='alertas'){on('goToPanico','click',()=>go('panico'));on('goToMsgs','click',()=>go('mensagens'));on('goToObras','click',()=>go('obras'));on('alertLogin','click',()=>go('conta'));}
   if(v==='panico'){
     on('btnNovoPanico','click',()=>{if(!S.user){toast('Faça login para registrar','user');return;}S.draft={};go('panicoAdd');});
@@ -1402,9 +1397,9 @@ function bindNewFeatures(v){
 /* ---------- início ---------- */
 $('#legend').open=isDesk();fitRecife();
 renderTop();renderMarkers();
+renderPanicoMarkers();renderObraMarkers();
 const h=(location.hash||'').slice(1);
 if(h&&byId(h))openDetail(h);
 else if(['ranking','votacao','conta'].includes(h))go(h);
 else go('mapa');
-  bindNewFeatures(v);
 })();
