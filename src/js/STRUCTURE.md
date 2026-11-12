@@ -1,45 +1,54 @@
-# Estrutura JS — Mutirão
+# Estrutura JavaScript — Mutirão
 
-Conferido em 2026-11-12.
+## Entrada
+
+```html
+<script type="module" src="src/js/modules/main.js"></script>
+```
+
+Scripts clássicos **antes** do module: Leaflet, `data/*`, `core/toast.js`.
+
+## Árvore
 
 ```
 src/js/
-├── core/
-│   ├── util.js         # $, esc, icon, norm, hash, DAY, NOW, isDesk, tempo, fmt
-│   ├── constants.js    # CATS, STATUS, RPA, PANICO_TIPO/SEV, OBRA_ST, NAVOF
-│   └── toast.js        # Mutirao.toast — auto-dismiss (token + fallback)
-├── services/
-│   ├── geocode.js      # Mutirao.reverseGeocode, Mutirao.geocodeSearch
-│   ├── gps.js          # Mutirao.getGPS
-│   └── share.js        # Mutirao.services.share helpers
-├── views/
-│   ├── README.md
-│   ├── mapa.js, detalhe.js, ranking.js, votacao.js, conta.js
-│   ├── adicionar.js, panico.js, obras.js, mensagens.js, alertas.js
-│   └── (registro Mutirao.views._*; HTML das v* ainda no IIFE de app.js)
-├── data/               # bairros, vizinhos, seed, riscos, env (globais)
-├── app.js              # IIFE: mapa Leaflet, S, rotas, views, bind, boot
-└── STRUCTURE.md
+├── core/                    # clássico (toast canônico)
+│   ├── util.js
+│   ├── constants.js
+│   └── toast.js             # Mutirao.toast
+├── data/                    # globais BAIRROS, SEED, RISCOS…
+├── modules/                 # ES modules (aplicação)
+│   ├── main.js              # createApp() + boot()
+│   ├── createApp.js         # composição install*
+│   ├── application.js       # reexport boot (compat)
+│   ├── registry.js
+│   ├── lib/
+│   │   ├── dom.js           # $, esc, icon, tempo, fmt
+│   │   └── constants.js     # CATS, STATUS, chips
+│   ├── ui/
+│   │   └── toast.js         # bridge → Mutirao.toast
+│   ├── install/
+│   │   ├── dom.js
+│   │   ├── constants.js
+│   │   └── runtime.js       # estado, mapa, rotas, views, bind, F1
+│   └── STRUCTURE.md
+├── services/                # clássico legado (geocode/gps helpers)
+└── views/                   # registro legado de telas
 ```
 
-## Ordem de carga
+## Fluxo
 
-1. Leaflet + MarkerCluster  
-2. `data/*`  
-3. `core/util` → `constants` → `toast`  
-4. `services/geocode` → `gps` → `share`  
-5. `views/*`  
-6. `app.js`  
+```
+main.js
+  → createApp()
+       → installDom(app)
+       → installConstants(app)
+       → installRuntime(app)   # anexa S, map, go, boot, …
+  → app.boot()
+```
 
-## Toast
+## Como evoluir
 
-Única implementação: `core/toast.js`.  
-`app.js`: `const toast = (msg,ic) => Mutirao.toast(msg,ic)`.
-
-- 3100ms visível  
-- `toastGen` isola timers  
-- Fallback 220ms se não houver `animationend`  
-
-## Por que as `v*` ainda estão no IIFE
-
-O mapa Leaflet, `S`, `panel` e helpers compartilham o mesmo closure. Extrair o HTML das views para ES modules exigiria um objeto de contexto injetado em todas as funções. Os arquivos em `views/` documentam a divisão por tela e registram metadados em `Mutirao.views` para manutenção.
+1. Utils puros → `modules/lib/`
+2. Nova feature isolada → `modules/install/<feature>.js` chamado em `createApp.js`
+3. Fatiar `runtime.js` → novos `install/*` recebendo o mesmo `app` e usando `app.S`, `app.map`, `app.go`

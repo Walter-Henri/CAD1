@@ -53,7 +53,7 @@ flowchart TB
   subgraph browser [Navegador]
     HTML[index.html]
     CSS[src/css/app.css → módulos]
-    JS[core + services + views + app.js]
+    JS[modules/main.js ES + data clássicos]
     MAP[Leaflet / OSM]
   end
   HTML --> CSS

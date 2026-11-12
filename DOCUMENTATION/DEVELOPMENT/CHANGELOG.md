@@ -1,5 +1,19 @@
 # CHANGELOG — Mutirão · Recife
 
+## [1.9.0] — Modularização ES modules do JavaScript — 2026-11-12
+
+### Changed
+- `app.js` monolítico substituído por ES modules em `src/js/modules/`.
+- Entrada: `modules/main.js` (`type="module"`).
+- `createApp()` + `install/dom`, `install/constants`, `install/runtime`.
+- Utilitários em `lib/dom.js` e `lib/constants.js`; toast bridge em `ui/toast.js`.
+- `src/js/app.js` permanece só como stub legado (não carregado).
+
+### Notes
+- `install/runtime.js` concentra mapa/rotas/views/F1 no mesmo closure (mesmo comportamento).
+- Próximo passo: fatiar runtime em install/map, views, fase1 sobre o bag `app`.
+
+
 ## [1.8.0] — CSS modular + Design System + doc de infraestrutura — 2026-11-12
 
 ### Changed
