@@ -1,62 +1,81 @@
 # Relatório de Bugs Corrigidos — Mutirão · Recife
 
----
+## BUG-006 · ALTO — Toasts não desapareciam automaticamente
 
-## BUG-001 · CRÍTICO — Texto invisível no campo de busca (tema claro)
+**Status:** ✅ CORRIGIDO (1.7.1) | **Arquivo:** `src/js/core/toast.js`
 
-**Status:** ✅ CORRIGIDO | **Arquivo:** `src/css/app.css`
-
-**Causa raiz:** `.topbar { color: #fff }` → inputs herdam `color: inherit` → texto branco em fundo branco.
+**Causa:** o hide dependia só de `animationend`. Com `prefers-reduced-motion` (regra global e específica no CSS), a animação não roda e o evento nunca dispara; o toast permanece visível.
 
 **Correção:**
-```css
-/* ANTES: sem color explícito */
-.search input { background: var(--surface); padding: 0 48px 0 44px; }
+- Timer de exibição 3100ms + fallback 220ms após `toast-out`
+- Token `toastGen` para timers antigos não afetarem toast novo
+- Reinício forçado da animação de entrada ao substituir conteúdo
 
-/* DEPOIS */
-.search input { background: var(--surface); color: var(--ink); padding: 0 48px 0 44px; }
-.search input::placeholder { color: var(--ink-2); }
-/* + mesma correção em: input, .textarea, .select { color: var(--ink); } */
-```
+---
+
+## BUG-007 · ALTO — Listeners da Fase 1 não ligados após render
+
+**Status:** ✅ CORRIGIDO (1.7.1) | **Arquivo:** `src/js/app.js`
+
+**Causa:** `bindNewFeatures` era chamado uma vez no boot com `v` indefinido e usava `on` fora do escopo de `bindPanel`.
+
+**Correção:** `bindNewFeatures(S.view, on)` no final de `bindPanel`.
+
+---
+
+## BUG-008 · MÉDIO — Marcadores de pânico/obra ausentes após reload
+
+**Status:** ✅ CORRIGIDO (1.7.1) | **Arquivo:** `src/js/app.js`
+
+**Causa:** `renderPanicoMarkers` / `renderObraMarkers` só rodavam após mutações (e em `submitAdd`).
+
+**Correção:** ambas chamadas no boot, junto com `renderMarkers`.
+
+---
+
+## BUG-009 · MÉDIO — Painel mobile oculto nas views da Fase 1
+
+**Status:** ✅ CORRIGIDO (1.7.1) | **Arquivo:** `src/css/app.css`
+
+**Causa:** em `max-width: 959.98px`, `.panel{display:none}` só reabria para ranking/votacao/conta/adicionar/sucesso.
+
+**Correção:** incluir `alertas`, `panico*`, `obras*`, `mensagens`, `lider` no seletor de tela cheia.
+
+---
+
+## BUG-001 · CRÍTICO — Texto invisível na busca (tema claro)
+
+**Status:** ✅ CORRIGIDO | **Arquivo:** `src/css/app.css`  
+Inputs herdam `color` do topbar branco. Correção: `color: var(--ink)` em `.search input` e campos de formulário.
 
 ---
 
 ## BUG-002 · ALTO — `.b-poly` duplicata com `fill-opacity:.95`
 
-**Status:** ✅ CORRIGIDO | **Arquivo:** `src/css/app.css`
-
-**Causa raiz:** Duas regras `.b-poly` coexistiam. A posterior (`fill-opacity:.95`) vencia por
-CSS cascade, tornando os polígonos opacos e encobrindo os tiles OSM.
-
-**Correção:** Remoção da regra duplicata. Valor correto: `fill-opacity:.35` (semitransparente).
+**Status:** ✅ CORRIGIDO | **Arquivo:** `src/css/app.css`  
+Regra posterior tornava polígonos opacos. Mantido `.35`.
 
 ---
 
-## BUG-003 · ALTO — `.mapwrap { position:relative }` colapsava o mapa (ocorreu 2×)
+## BUG-003 · ALTO — `.mapwrap { position:relative }` colapsava o mapa (2×)
 
-**Status:** ✅ CORRIGIDO | **Arquivo:** `src/css/app.css`
-
-**Causa raiz:** Regra `.mapwrap { position:relative }` adicionada ao tentar criar um "vignette"
-sobrescrevia `.mapwrap { position:absolute; inset:0 }`. Com `position:relative` e sem
-`height`/`width`, o container colapsava para 0px (todos os filhos são `position:absolute`).
-
-**Medida preventiva:** Comentário explícito no CSS indicando que esta propriedade não pode ser sobrescrita.
+**Status:** ✅ CORRIGIDO | **Arquivo:** `src/css/app.css`  
+Manter `position:absolute; inset:0`.
 
 ---
 
-## BUG-004 · MÉDIO — `.pickbar` duplicada (z-index conflitante)
+## BUG-004 · MÉDIO — `.pickbar` duplicada (z-index)
 
 **Status:** ✅ CORRIGIDO | **Arquivo:** `src/css/app.css`
-
-**Causa raiz:** Regra original (`z-index:850`, `bottom:20px`, "floating card") coexistia com
-nova (`z-index:800`, `bottom:0`, full-width bar). **Correção:** Remoção da regra antiga.
 
 ---
 
-## BUG-005 · MÉDIO — `.mk.sel .pin` conflito entre regra antiga e nova
+## BUG-005 · MÉDIO — `.mk.sel .pin` borda preta residual
 
 **Status:** ✅ CORRIGIDO | **Arquivo:** `src/css/app.css`
 
-**Causa raiz:** Regra antiga declarava `border-color:#0B0B0F`. Nova regra (`--pc/branco`) não
-declarava `border-color`, então o preto persistia. **Correção:** Remoção da regra antiga +
-adição de `border-color:var(--pc,var(--primary))` na nova regra.
+---
+
+## Ainda abertos (não são “corrigidos”)
+
+Ver [`../FASE1.md`](../FASE1.md): `S.user.bairro`, hash das views F1, `pickCancel`/`_returnTo`, `respLida`.

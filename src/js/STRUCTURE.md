@@ -1,34 +1,45 @@
 # Estrutura JS — Mutirão
 
+Conferido em 2026-11-12.
+
 ```
 src/js/
 ├── core/
-│   ├── util.js         # $, esc, icon, norm, hash, tempo, fmt
-│   ├── constants.js    # CATS, STATUS, RPA, PANICO_*, OBRA_ST, NAVOF
-│   └── toast.js        # toast() com auto-dismiss (token + fallback)
+│   ├── util.js         # $, esc, icon, norm, hash, DAY, NOW, isDesk, tempo, fmt
+│   ├── constants.js    # CATS, STATUS, RPA, PANICO_TIPO/SEV, OBRA_ST, NAVOF
+│   └── toast.js        # Mutirao.toast — auto-dismiss (token + fallback)
 ├── services/
-│   ├── geocode.js      # reverseGeocode, geocodeSearch (Nominatim)
-│   ├── gps.js          # getGPS
-│   └── share.js        # helpers de compartilhamento
+│   ├── geocode.js      # Mutirao.reverseGeocode, Mutirao.geocodeSearch
+│   ├── gps.js          # Mutirao.getGPS
+│   └── share.js        # Mutirao.services.share helpers
 ├── views/
-│   └── README.md       # mapa de telas → funções v*
-├── data/               # GeoJSON e seed (globais)
-└── app.js              # mapa Leaflet, estado S, rotas, views, bind, boot
+│   ├── README.md
+│   ├── mapa.js, detalhe.js, ranking.js, votacao.js, conta.js
+│   ├── adicionar.js, panico.js, obras.js, mensagens.js, alertas.js
+│   └── (registro Mutirao.views._*; HTML das v* ainda no IIFE de app.js)
+├── data/               # bairros, vizinhos, seed, riscos, env (globais)
+├── app.js              # IIFE: mapa Leaflet, S, rotas, views, bind, boot
+└── STRUCTURE.md
 ```
 
-## Ordem de carga (index.html)
+## Ordem de carga
 
-1. Leaflet + MarkerCluster (CDN)
-2. data/* (BAIRROS, VIZINHOS, SEED, RISCOS, ENV)
-3. core/util → core/constants → core/toast
-4. services/geocode → gps → share
-5. app.js
+1. Leaflet + MarkerCluster  
+2. `data/*`  
+3. `core/util` → `constants` → `toast`  
+4. `services/geocode` → `gps` → `share`  
+5. `views/*`  
+6. `app.js`  
 
 ## Toast
 
-`core/toast.js` é a implementação canônica. `app.js` delega com `Mutirao.toast`.
+Única implementação: `core/toast.js`.  
+`app.js`: `const toast = (msg,ic) => Mutirao.toast(msg,ic)`.
 
-Correções:
-- Token `toastGen` impede timer antigo de esconder toast novo
-- Fallback de 220ms se `animationend` não disparar (`prefers-reduced-motion`)
-- Reinicia animação de entrada ao substituir toast visível
+- 3100ms visível  
+- `toastGen` isola timers  
+- Fallback 220ms se não houver `animationend`  
+
+## Por que as `v*` ainda estão no IIFE
+
+O mapa Leaflet, `S`, `panel` e helpers compartilham o mesmo closure. Extrair o HTML das views para ES modules exigiria um objeto de contexto injetado em todas as funções. Os arquivos em `views/` documentam a divisão por tela e registram metadados em `Mutirao.views` para manutenção.

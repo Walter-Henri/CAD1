@@ -1,74 +1,76 @@
 # Arquitetura — Mutirão · Recife
 
-## Componentes e camadas
+Conferido em 2026-11-12. Detalhe F1: [`../FASE1.md`](../FASE1.md). JS: [`../../src/js/STRUCTURE.md`](../../src/js/STRUCTURE.md).
+
+## Camadas
 
 ```
 NAVEGADOR
-  topbar(nav+busca+tema) │ panel(lateral) │ mapwrap(Leaflet) │ tabbar(mobile)
-  pickbar(GPS+geocod+busca) │ #layer(overlays: SV, choropleth)
+  topbar · #panel · mapwrap (Leaflet) · tabbar (5 colunas mobile)
+  pickbar · #layer (modal / Street View)
 
               ↓
-  app.js IIFE — 987 linhas, 67 funções
-  ┌──────────────────┬──────────────────┬──────────────────────┐
-  │ Roteador         │ Renderizador     │ Mapa                 │
-  │ go(view)         │ renderPanel()    │ buildWorldMask()     │
-  │ hash routing     │ transPanel()     │ setBaseTile(dark)    │
-  │ S.view           │ bindPanel()      │ renderMarkers()      │
-  └──────────────────┴──────────────────┴──────────────────────┘
-  ┌──────────────────┬──────────────────┬──────────────────────┐
-  │ GPS+Geocoding    │ Choropleth       │ Estado + Persistência│
-  │ getGPS()         │ renderChoropleth │ S { view,sel,user…}  │
-  │ reverseGeocode() │ toggleChoropleth │ save() → localStorage│
-  │ geocodeSearch()  │ _renderChoroLeg  │ 'mutirao.v1'         │
-  └──────────────────┴──────────────────┴──────────────────────┘
+  Scripts clássicos
+  core (util, constants, toast) → services → views (registry) → app.js IIFE
 
-              ↓ consome globais
-  BAIRROS(94) · VIZINHOS(6) · SEED(40) · RISCOS(373) · ENV
+  app.js
+  ┌─────────────┬──────────────┬─────────────────┐
+  │ go / NAVOF  │ renderPanel  │ map + layers    │
+  │ transPanel  │ bindPanel    │ world mask      │
+  │             │ bindNewFeatures              │
+  └─────────────┴──────────────┴─────────────────┘
+  ┌─────────────┬──────────────┬─────────────────┐
+  │ GPS/Nominatim│ choropleth  │ S + localStorage│
+  └─────────────┴──────────────┴─────────────────┘
+  Fase 1: panics, obras, messages · pgLayer · ogLayer
 
-              ↓ fetch sem API key
-  OSM Tiles · Nominatim · Google SV iframe · WhatsApp wa.me
+  Globais data: BAIRROS · VIZINHOS · SEED · RISCOS · ENV
+  Namespace: window.Mutirao (toast, util, constants, services)
 ```
 
-## Camadas do mapa Leaflet (z-index)
-
-| z | Pane | Conteúdo |
-|---|---|---|
-| 600 | markerPane | Clusters + marcadores |
-| 450 | maskPane* | World mask SVG (recorte geográfico) |
-| 400 | overlayPane | VIZINHOS + BAIRROS + riskLayer + choropleth |
-| 200 | tilePane | OSM tiles + CSS dark filter |
-
-`* maskPane` criado via `map.createPane('maskPane')` — `L.polygon([outerBox, ...100 holes])`
-
-## Fluxo: Adicionar Ponto
+## Toast
 
 ```
-btnAdd → go('pick') → pickbar visível + pickpin
-  │
-  ├─ GPS → getGPS() → flyTo(lat,lng,16)
-  ├─ Busca → geocodeSearch() → showPickSuggest() → flyTo
-  └─ Arrastar mapa (crosshair fixo) → updatePick() em moveend
-        ↓
-  bairroAt(lat,lng) + reverseGeocode() debounce 900ms
-        ↓
-  "Confirmar" → S.draft = {lat,lng,b,r} → go('adicionar')
-        ↓
-  go('sucesso') → renderMarkers() → animação pin-drop
+toast(msg, ic)
+  → Mutirao.toast (core/toast.js)
+  → gen++ ; clear timers
+  → show 3,1s → toast-out + fallback 220ms
+  → hidden (só se gen atual)
 ```
 
-## Fluxo: Roteamento
+## Bind do painel
 
 ```
-URL hash → go(view) → transPanel(html) → bindPanel()
-  Telas: mapa │ detalhe │ ranking │ votacao │ conta │ login
-         adicionar │ sucesso │ pick
+transPanel(html)
+  → bindPanel()
+       → listeners base + Conta
+       → bindNewFeatures(S.view, on)   // F1
 ```
 
-## Dependências de carregamento (index.html — ORDEM OBRIGATÓRIA)
+## Fluxos resumidos
+
+**Ponto comum:** `startAdd` → pick → adicionar → `submitAdd` → markers + panico/obra markers  
+
+**Pânico:** FAB → panicoAdd → pick (`_returnTo`) → saveP → markers  
+
+**Obra:** obras → obraAdd → saveO → status via `computeObraStatus`  
+
+**Líder:** Conta → goLider (role) → vLider (msgs do bairro + obras)  
+
+## Painel por viewport
+
+| Viewport | Comportamento |
+|---|---|
+| ≥ 960px | Painel 420px; tabbar oculta; topnav sem Alertas/Obras (menu/Conta) |
+| &lt; 960px | Tela cheia para ranking, votação, conta, adicionar, sucesso **e** todas as views F1 |
+
+## Scripts (ordem obrigatória)
 
 ```
-leaflet.js → leaflet.markercluster.js
-  → bairros.js → vizinhos.js → seed.js → riscos.js → env.js → app.js
+leaflet → markercluster
+→ bairros → vizinhos → seed → riscos → env
+→ core/util → constants → toast
+→ services/geocode → gps → share
+→ views/*
+→ app.js
 ```
-⚠️ `app.js` é um IIFE que consome as globais `BAIRROS`, `VIZINHOS`, `SEED`, `RISCOS`, `ENV`.
-Alterar esta ordem causa falha silenciosa.
