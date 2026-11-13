@@ -324,19 +324,34 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 /* ── Desktop ── */
 @media (min-width: 960px) {
+  /* Painel lateral mais largo: conteúdo de Conta, listas e formulários cabe sem apertar */
   .panel {
-    width: min(440px, 42vw);
-    max-width: 480px;
+    width: min(560px, 48vw);
+    min-width: min(420px, 100%);
+    max-width: 600px;
   }
   .mapwrap {
-    left: min(440px, 42vw);
+    left: min(560px, 48vw);
+  }
+  /* Quando a viewport é grande, alinha o mapa ao max do painel */
+  @media (min-width: 1250px) {
+    .panel { width: 560px; }
+    .mapwrap { left: 560px; }
   }
   .toast {
-    left: calc(min(440px, 42vw) + (100% - min(440px, 42vw)) / 2);
+    left: calc(min(560px, 48vw) + (100% - min(560px, 48vw)) / 2);
     transform: translateX(-50%);
+  }
+  .pin-inner {
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
   }
   .conta-actions {
     grid-template-columns: 1fr 1fr;
+  }
+  .row > .btn {
+    flex: 1 1 calc(50% - 6px);
+    min-width: min(100%, 160px);
   }
 }
 
