@@ -27,8 +27,8 @@
   margin-left:env(safe-area-inset-left,0px)}
 .legend summary{list-style:none;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;font-weight:800;cursor:pointer}
 .legend summary::-webkit-details-marker{display:none}
-.legend summary .ic{transition:transform .15s}
-.legend[open] summary .ic.chev{transform:rotate(180deg)}
+.legend summary .legend-close{margin-left:auto;opacity:.55;flex:none}
+.legend[open] summary .legend-close{opacity:1}
 .legend .lg{padding:0 14px 12px;display:grid;gap:10px;font-size:14px}
 .legend h4{margin:4px 0 0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
 .lg-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
