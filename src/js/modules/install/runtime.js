@@ -601,9 +601,20 @@ function vConta(){
   const ms=[{x:'Apoiar 3 problemas do seu bairro',v:Math.min(sup,3),of:3},{x:'Marcar 1 ponto com foto',v:mine.some(p=>(p.photos||[]).length)?1:0,of:1},{x:'Votar na votação do mês',v:votes?1:0,of:1}];
   const done=ms.every(m=>m.v>=m.of);
   return `<div class="pin-inner">
-    <div class="dhead"><span class="avatar" style="width:56px;height:56px;font-size:24px;border-color:#0B0B0F">${esc(S.user.name[0].toUpperCase())}</span>
-      <div class="row" style="margin-bottom:12px"><button class="btn sec" id="goMsgs">${icon('note','sm')}Mensagens</button><button class="btn sec" id="goLider">${icon('users','sm')}Painel do líder</button></div><div style="flex:1;min-width:0"><h2>Olá, ${esc(S.user.name)}</h2><p class="sub2">${esc(S.user.login)}${S.user.bairro?' · '+esc(S.user.bairro):''}</p></div>
-      <button class="btn ghost" id="logout">Sair</button></div>
+    <div class="conta-head">
+      <div class="conta-id">
+        <span class="avatar conta-av">${esc(S.user.name[0].toUpperCase())}</span>
+        <div class="conta-meta">
+          <h2>Olá, ${esc(S.user.name)}</h2>
+          <p class="sub2">${esc(S.user.login)}${S.user.bairro?' · '+esc(S.user.bairro):''}</p>
+        </div>
+        <button class="btn ghost" id="logout">Sair</button>
+      </div>
+      <div class="conta-actions">
+        <button class="btn sec" id="goMsgs">${icon('note','sm')}Mensagens</button>
+        <button class="btn sec" id="goLider">${icon('users','sm')}Painel do líder</button>
+      </div>
+    </div>
     <div class="stats"><div><b>${mine.length}</b><span>pontos marcados</span></div><div><b>${sup}</b><span>apoios dados</span></div><div><b>${votes}</b><span>votos</span></div></div>
     <section style="display:grid;gap:10px"><h3 class="sec">Seus pontos</h3>
       ${mine.length?`<div class="list">${mine.slice().reverse().map(p=>listItem(p)).join('')}</div>`:`<p class="note">${icon('pin')}Você ainda não marcou nenhum ponto.</p>`}

@@ -25,6 +25,7 @@ mutirao/
 │   │   ├── tokens/design-tokens.css
 │   │   ├── base/{reset,animations}.css
 │   │   ├── layout/shell.css
+│   │   ├── layout/responsive-fix.css  # overflow, breakpoints, a11y
 │   │   ├── components/{ui,overlays,pickbar}.css
 │   │   ├── map/{chrome,markers,layers}.css
 │   │   └── features/fase1.css
@@ -62,6 +63,10 @@ mutirao/
 4. `services/geocode` → `gps` → `share`  
 5. `views/*` (registro de telas)  
 6. `app.js` (IIFE; `toast` delega a `Mutirao.toast`)
+
+## UI/UX (1.10)
+
+Auditoria de dimensionamento, responsividade e acessibilidade: ver [`DOCUMENTATION/TESTING/UIUX_AUDIT_REPORT.md`](DOCUMENTATION/TESTING/UIUX_AUDIT_REPORT.md).
 
 ## Rodar localmente
 

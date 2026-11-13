@@ -1,6 +1,25 @@
 # CHANGELOG — Mutirão · Recife
 
-## [1.9.0] — Modularização ES modules do JavaScript — 2026-11-12
+## [1.10.0] — Auditoria UI/UX, responsividade e acessibilidade — 2026-11-13
+
+### Fixed
+- **Conta:** cabeçalho reorganizado (avatar + nome + Sair; ações em grade). Botões Mensagens/Líder não estouram mais a largura do painel.
+- **Overflow horizontal:** painéis, modais, formulários e listas com `min-width:0`, `overflow-x:hidden` e `overflow-wrap`.
+- **Mobile fullscreen:** ranking, conta, F1 e demais telas usam coluna flex com rolagem vertical apenas.
+- **Botões em `.row`:** passam a quebrar de linha em telas estreitas (50%/100% conforme breakpoint).
+- **Stats / cats / coupon:** adaptam grade e tipografia em telas pequenas.
+
+### Added
+- `src/css/layout/responsive-fix.css` — correções sistemáticas de layout, tablet e a11y (área de toque ≥44px).
+- Ajuda contextual, Voltar/Fechar e dimensionamento de modal/menu (1.9.x) mantidos.
+
+### Changed
+- Painel desktop: largura `min(440px, 42vw)` com mapa alinhado.
+- Toast desktop reposicionado em função da largura do painel.
+
+---
+
+[1.9.0] — Modularização ES modules do JavaScript — 2026-11-12
 
 ### Changed
 - `app.js` monolítico substituído por ES modules em `src/js/modules/`.

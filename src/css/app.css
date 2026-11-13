@@ -14,6 +14,7 @@
 @import url('./tokens/design-tokens.css');
 @import url('./base/reset.css');
 @import url('./layout/shell.css');
+@import url('./layout/responsive-fix.css');
 @import url('./map/chrome.css');
 @import url('./map/markers.css');
 @import url('./components/ui.css');

@@ -95,3 +95,12 @@ flowchart TB
 3. Preferir `var(--primary)` a `#1E3A8A` espalhado (legado no topbar ainda usa hex fixo por contraste garantido sobre azul).  
 4. Testar tema claro, escuro e `prefers-reduced-motion`.  
 5. Nunca sobrescrever `.mapwrap { position:absolute; inset:0 }`.
+
+
+## Layout responsivo (1.10)
+
+- Breakpoints: 380px (estreito), 600px (tablet), 960px (desktop).
+- Painel desktop: `min(440px, 42vw)`, máximo 480px.
+- Mobile fullscreen: `display:flex; flex-direction:column; overflow-x:hidden`.
+- Toque mínimo: 44×44px em botões e ícones de ação.
+- Módulo: `src/css/layout/responsive-fix.css`.

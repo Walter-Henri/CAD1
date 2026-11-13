@@ -1,6 +1,29 @@
 # Relatório de Bugs Corrigidos — Mutirão · Recife
 
-## BUG-006 · ALTO — Toasts não desapareciam automaticamente
+## BUG-015 · ALTO — Conteúdo cortado / overflow na Conta e painéis
+
+**Status:** ✅ CORRIGIDO (1.10.0) | **Arquivos:** `runtime.js` (vConta), `layout/responsive-fix.css`
+
+**Causa:** no cabeçalho da Conta, avatar, botões Mensagens/Líder, nome e Sair competiam na mesma linha flex (`.dhead`), forçando largura maior que o painel. Em mobile, painéis fullscreen usavam `display:block` sem contenção de overflow horizontal; `.row > .btn` com `flex-basis: 140px` gerava rolagem lateral.
+
+**Correção:**
+- Cabeçalho da Conta em blocos empilhados (`.conta-head` / `.conta-actions`)
+- Módulo CSS de overflow, quebra de linha e breakpoints mobile/tablet/desktop
+- Painéis mobile em coluna com `overflow-x: hidden`
+
+---
+
+## BUG-016 · MÉDIO — Ficha do ponto (detalhe) limitada demais no mobile
+
+**Status:** ✅ CORRIGIDO (pré-1.10 / shell) | **Arquivo:** `layout/shell.css`
+
+**Causa:** `max-height: 74%` cortava conteúdo longo.
+
+**Correção:** `max-height: calc(100% - 8px)` com rolagem interna.
+
+---
+
+UG-006 · ALTO — Toasts não desapareciam automaticamente
 
 **Status:** ✅ CORRIGIDO (1.7.1) | **Arquivo:** `src/js/core/toast.js`
 
