@@ -33,3 +33,28 @@
 .gallery-hd h3{margin:0}
 .badge-cnt{font-size:.72rem;font-weight:700;background:var(--primary-soft);color:var(--primary);padding:2px 8px;border-radius:999px}
 
+
+/* ── Barra Voltar / Ajuda / Fechar ───────────────────────── */
+.sheet-bar{
+  position:sticky;top:0;z-index:3;
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;
+  background:var(--surface);
+  border-bottom:1px solid var(--line-soft);
+}
+.sheet-bar .sheet-back{margin-right:auto}
+.sheet-bar .sheet-back .ic{transform:scaleX(-1)}
+.sheet-hint{flex:1;font-size:13px;font-weight:700;color:var(--ink-2);min-width:0}
+.help-btn{
+  font-weight:900;font-size:18px;line-height:1;
+  width:44px;height:44px;border-radius:12px;
+  border:2px solid var(--line);background:var(--surface-2);color:var(--primary);
+}
+.help-scrim{z-index:2200}
+.help-modal{width:min(560px,calc(100vw - 24px));max-height:min(88vh,100%);overflow:auto}
+.help-list{margin:0;padding-left:1.2em;display:grid;gap:8px;font-size:15px;line-height:1.45}
+.help-list b{color:var(--ink)}
+.modal{max-height:min(88vh,100%);overflow:auto;width:min(480px,100%)}
+.menu{max-height:min(70vh,520px);overflow:auto;width:min(340px,calc(100% - 24px))}
+.menu-bar{position:sticky;top:0;margin:-6px -6px 6px;border-radius:16px 16px 0 0}
+.field.err .select{border-color:var(--err)}

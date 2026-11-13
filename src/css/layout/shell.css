@@ -94,8 +94,15 @@
 @media (max-width:959.98px){
   .app{height:calc(100% - 64px - 62px - env(safe-area-inset-bottom,0px))}
   .panel{display:none}
-  body[data-view="detalhe"] .panel{display:block;left:0;right:0;bottom:0;max-height:74%;border-radius:22px 22px 0 0;box-shadow:0 -8px 30px rgba(10,20,50,.25)}
-  body[data-view="detalhe"] .panel::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--line-soft);margin:10px auto 0}
+  body[data-view="detalhe"] .panel{
+    display:flex;flex-direction:column;
+    left:0;right:0;bottom:0;top:auto;
+    max-height:calc(100% - 8px);height:auto;
+    overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    border-radius:22px 22px 0 0;box-shadow:0 -8px 30px rgba(10,20,50,.25)
+  }
+  body[data-view="detalhe"] .panel::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--line-soft);margin:10px auto 0;flex:none}
+  body[data-view="detalhe"] .pin-inner{padding-bottom:max(28px,env(safe-area-inset-bottom,0px))}
   body:is([data-view="ranking"],[data-view="votacao"],[data-view="conta"],[data-view="adicionar"],[data-view="sucesso"],[data-view="alertas"],[data-view="panico"],[data-view="panicoAdd"],[data-view="panicoDetalhe"],[data-view="obras"],[data-view="obraAdd"],[data-view="obraDetalhe"],[data-view="mensagens"],[data-view="lider"]) .panel{display:block;inset:0}
   body:is([data-view="ranking"],[data-view="votacao"],[data-view="conta"],[data-view="adicionar"],[data-view="sucesso"],[data-view="alertas"],[data-view="panico"],[data-view="panicoAdd"],[data-view="panicoDetalhe"],[data-view="obras"],[data-view="obraAdd"],[data-view="obraDetalhe"],[data-view="mensagens"],[data-view="lider"]) .maptools{display:none}
 }
@@ -105,8 +112,8 @@
   .topsearch{display:block}
   .topright{margin-left:0}
   .tabbar,.mtools-search{display:none}
-  .panel{left:0;top:0;bottom:0;width:420px;border-right:1px solid var(--line-soft)}
-  .mapwrap{left:420px}
+  .panel{left:0;top:0;bottom:0;width:min(440px,100%);border-right:1px solid var(--line-soft);overflow-x:hidden;overflow-y:auto}
+  .mapwrap{left:min(440px,100%)}
   body[data-view="pick"] .panel{opacity:.5;pointer-events:none}
 }
 

@@ -3,6 +3,7 @@ export function installRuntime(app) {
   const {
     $, esc, icon, norm, hash, DAY, NOW, isDesk, tempo, fmt,
     CATS, STATUS, RPA, MORRO, shape, stChip, catChip, toast,
+    openHelp, closeHelp, sheetBar,
   } = app;
 
   let tileBase = null;
@@ -227,15 +228,30 @@ function bairroAt(lat,lng){
 /* ---------- roteamento ---------- */
 const panel=$('#panel');
 const NAVOF={mapa:'mapa',detalhe:'mapa',pick:'mapa',adicionar:'mapa',sucesso:'mapa',ranking:'ranking',votacao:'votacao',conta:'conta',alertas:'alertas',panico:'alertas',panicoAdd:'alertas',panicoDetalhe:'alertas',mensagens:'alertas',lider:'alertas',obras:'obras',obraAdd:'obras',obraDetalhe:'obras'};
-function go(v){
+const hist=[];
+const HASH_VIEWS=new Set(['ranking','votacao','conta','adicionar','sucesso','alertas','panico','panicoAdd','mensagens','lider','obras','obraAdd']);
+function hashToken(v){
+  if(v==='detalhe'&&S.sel)return String(S.sel);
+  if(v==='panicoDetalhe'&&S.selP)return 'panico:'+S.selP;
+  if(v==='obraDetalhe'&&S.selO)return 'obra:'+S.selO;
+  if(HASH_VIEWS.has(v))return v;
+  return 'mapa';
+}
+function goBack(){const prev=hist.pop();go(prev||'mapa',{back:true})}
+function closeToMap(){hist.length=0;go('mapa',{replace:true})}
+function go(v,opt){
+  opt=opt||{};
   closeMenu();closeSugg();
+  if(typeof closeHelp==='function')closeHelp();
+  if(!opt.back&&!opt.replace&&S.view&&S.view!==v){hist.push(S.view);if(hist.length>20)hist.shift()}
+  if(opt.replace)hist.length=0;
   if(v!=='detalhe'&&S.sel){select(null)}
   S.view=v;document.body.dataset.view=v;
   document.querySelectorAll('[data-go]').forEach(b=>{if(b.dataset.go===NAVOF[v])b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
   const pick=v==='pick';
   $('#pickpin').hidden=!pick;$('#pickbar').hidden=!pick;$('#maptools').hidden=pick;$('#legend').hidden=pick;
   renderPanel();panel.scrollTop=0;
-  const tok=v==='detalhe'?S.sel:(['ranking','votacao','conta'].includes(v)?v:'mapa');
+  const tok=hashToken(v);
   try{history.replaceState(null,'','#'+tok)}catch(e){}
   if(pick)updatePick();
   setTimeout(()=>map.invalidateSize(),0);
@@ -321,13 +337,23 @@ function need(fn,why){
     <p class="sub2">Ver o mapa é livre. Para ${esc(why||'adicionar ponto, apoiar, enviar foto ou votar')}, entre com sua conta. Seu nome não aparece no mapa.</p>
     <div class="row"><button class="btn sec" data-close>Cancelar</button><button class="btn pri" id="gEnter">Entrar</button></div>`,
     m=>{m.querySelector('#gEnter').focus();m.querySelector('#gEnter').addEventListener('click',()=>{closeModal();go('conta')})},
-    ()=>{S.pending=null});
+    ()=>{S.pending=null},
+    'entrar');
 }
 let modalClose=null;
-function modal(html,init,onCancel){
-  const L2=$('#layer');L2.innerHTML=`<div class="scrim" id="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">${html}</div></div>`;
+function modal(html,init,onCancel,helpKey){
+  const L2=$('#layer');
+  L2.innerHTML=`<div class="scrim" id="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <div class="sheet-bar">
+      <span class="sheet-hint">Janela</span>
+      <button type="button" class="iconbtn help-btn" id="modalHelp" aria-label="Ajuda desta janela">?</button>
+      <button type="button" class="iconbtn" data-close aria-label="Fechar">${icon('close')}</button>
+    </div>
+    ${html}</div></div>`;
   const sc=$('#scrim');modalClose=onCancel||null;
   sc.addEventListener('click',e=>{if(e.target===sc||e.target.closest('[data-close]')){closeModal(true)}});
+  const hb=sc.querySelector('#modalHelp');
+  if(hb)hb.addEventListener('click',e=>{e.stopPropagation();openHelp(helpKey||'janela')});
   init&&init(sc);
 }
 function closeModal(cancel){const sc=$('#scrim');if(sc)sc.remove();if(cancel&&modalClose)modalClose();modalClose=null}
@@ -454,8 +480,9 @@ function shareWhatsApp(p){
 
 function renderPanel(){
   const v=S.view;
-  const html=v==='mapa'?vMapa():v==='detalhe'?vDetalhe():v==='ranking'?vRanking():v==='votacao'?vVotacao():v==='conta'?(S.user?vConta():vLogin()):v==='adicionar'?vAdicionar():v==='sucesso'?vSucesso():v==='alertas'?vAlertas():v==='panico'?vPanico():v==='panicoAdd'?vPanicoAdd():v==='panicoDetalhe'?vPanicoDetalhe():v==='obras'?vObras():v==='obraAdd'?vObraAdd():v==='obraDetalhe'?vObraDetalhe():v==='mensagens'?vMensagens():v==='lider'?vLider():vMapa();
-  transPanel(html);
+  const body=v==='mapa'?vMapa():v==='detalhe'?vDetalhe():v==='ranking'?vRanking():v==='votacao'?vVotacao():v==='conta'?(S.user?vConta():vLogin()):v==='adicionar'?vAdicionar():v==='sucesso'?vSucesso():v==='alertas'?vAlertas():v==='panico'?vPanico():v==='panicoAdd'?vPanicoAdd():v==='panicoDetalhe'?vPanicoDetalhe():v==='obras'?vObras():v==='obraAdd'?vObraAdd():v==='obraDetalhe'?vObraDetalhe():v==='mensagens'?vMensagens():v==='lider'?vLider():vMapa();
+  const bar=(typeof sheetBar==='function')?sheetBar(v):'';
+  transPanel(bar+body);
 }
 
 function vMapa(){
@@ -563,6 +590,7 @@ function vLogin(){
     ${c?`<div class="field" id="fName"><label for="lgName">Como quer ser chamado(a)</label><input class="input" id="lgName" autocomplete="nickname" placeholder="Ex.: Marluce"><span class="hint">Aparece só para você. No mapa ninguém vê seu nome.</span><span class="ferr">${icon('alert','sm')}Digite um nome.</span></div>`:''}
     <div class="field" id="fUser"><label for="lgUser">Login</label><input class="input" id="lgUser" autocomplete="username" placeholder="E-mail ou celular"><span class="ferr">${icon('alert','sm')}Digite seu e-mail ou celular.</span></div>
     <div class="field" id="fPass"><label for="lgPass">Senha</label><input class="input" id="lgPass" type="password" autocomplete="${c?'new-password':'current-password'}"><span class="ferr">${icon('alert','sm')}A senha precisa ter pelo menos 4 caracteres.</span></div>
+    <div class="field" id="fBairro"><label for="lgBairro">Seu bairro</label><select class="select" id="lgBairro"><option value="">Escolha o bairro</option>${(BAIRROS.features||[]).map(f=>f.properties.n).sort((a,b)=>a.localeCompare(b,'pt')).map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('')}</select><span class="hint">As mensagens e o painel do líder usam este bairro.</span><span class="ferr">${icon('alert','sm')}Escolha o bairro onde você mora.</span></div>
     <button class="btn pri full">${c?'Criar conta':'Entrar'}</button>
     <button type="button" class="btn ghost" id="lgToggle">${c?'Já tenho conta. Entrar':'Ainda não tem conta? Criar conta'}</button>
     <div class="note">${icon('lock')}<span>Protótipo: qualquer e-mail ou celular com senha de 4 ou mais caracteres funciona. Nada sai do seu navegador.</span></div>
@@ -574,7 +602,7 @@ function vConta(){
   const done=ms.every(m=>m.v>=m.of);
   return `<div class="pin-inner">
     <div class="dhead"><span class="avatar" style="width:56px;height:56px;font-size:24px;border-color:#0B0B0F">${esc(S.user.name[0].toUpperCase())}</span>
-      <div class="row" style="margin-bottom:12px"><button class="btn sec" id="goMsgs">${icon('note','sm')}Mensagens</button><button class="btn sec" id="goLider">${icon('users','sm')}Painel do líder</button></div><div style="flex:1;min-width:0"><h2>Olá, ${esc(S.user.name)}</h2><p class="sub2">${esc(S.user.login)}</p></div>
+      <div class="row" style="margin-bottom:12px"><button class="btn sec" id="goMsgs">${icon('note','sm')}Mensagens</button><button class="btn sec" id="goLider">${icon('users','sm')}Painel do líder</button></div><div style="flex:1;min-width:0"><h2>Olá, ${esc(S.user.name)}</h2><p class="sub2">${esc(S.user.login)}${S.user.bairro?' · '+esc(S.user.bairro):''}</p></div>
       <button class="btn ghost" id="logout">Sair</button></div>
     <div class="stats"><div><b>${mine.length}</b><span>pontos marcados</span></div><div><b>${sup}</b><span>apoios dados</span></div><div><b>${votes}</b><span>votos</span></div></div>
     <section style="display:grid;gap:10px"><h3 class="sec">Seus pontos</h3>
@@ -633,6 +661,9 @@ function vSucesso(){
 function bindPanel(){
   bindOpen(panel);
   const on=(id,ev,fn)=>{const el=panel.querySelector('#'+id);if(el)el.addEventListener(ev,fn)};
+  on('navBack','click',goBack);
+  on('navHelp','click',()=>openHelp(S.view));
+  on('navClose','click',closeToMap);
   on('pAdd','click',startAdd);on('cAdd','click',startAdd);
   on('pFilt','click',openFilters);
   on('dClose','click',()=>go('mapa'));
@@ -679,13 +710,13 @@ function toggleSupport(p){
 }
 function doLogin(e){
   e.preventDefault();
-  const u=$('#lgUser').value.trim(),pw=$('#lgPass').value,nm=$('#lgName')?$('#lgName').value.trim():'';
+  const u=$('#lgUser').value.trim(),pw=$('#lgPass').value,nm=$('#lgName')?$('#lgName').value.trim():'',bairro=$('#lgBairro')?$('#lgBairro').value:'';
   let ok=true;
   const flag=(id,bad)=>{$('#'+id).classList.toggle('err',bad);if(bad)ok=false};
-  if(S.create)flag('fName',!nm);flag('fUser',!u);flag('fPass',pw.length<4);
-  if(!ok){const f=panel.querySelector('.field.err input');f&&f.focus();return}
+  if(S.create)flag('fName',!nm);flag('fUser',!u);flag('fPass',pw.length<4);flag('fBairro',!bairro);
+  if(!ok){const f=panel.querySelector('.field.err input,.field.err select');f&&f.focus();return}
   const name=nm||(u.includes('@')?u.split('@')[0]:'Vizinho(a)');
-  S.user={name:name.charAt(0).toUpperCase()+name.slice(1),login:u};S.create=false;save();renderTop();
+  S.user={name:name.charAt(0).toUpperCase()+name.slice(1),login:u,bairro,role:'morador'};S.create=false;save();renderTop();
   toast(`Você entrou como ${S.user.name}.`,'check');
   const fn=S.pending;S.pending=null;if(fn)fn();else go('conta');
 }
@@ -754,7 +785,7 @@ function updatePick(){
     const adEl=$('#pickAddr');if(adEl)adEl.textContent=addr||'';
   },900);
 }
-$('#pickCancel').addEventListener('click',()=>{if(S.draft&&S.draft.b)go('adicionar');else{S.draft=null;go('mapa')}});
+$('#pickCancel').addEventListener('click',()=>{const ret=S.draft&&S.draft._returnTo;if(ret){S.draft._returnTo=undefined;go(ret);return;}if(S.draft&&S.draft.b)go('adicionar');else{S.draft=null;go('mapa')}});
 $('#pickOk').addEventListener('click',()=>{const c=map.getCenter(),b=bairroAt(c.lat,c.lng);if(!b)return;
   S.draft=Object.assign(S.draft||{photos:[]},{lat:+c.lat.toFixed(5),lng:+c.lng.toFixed(5),b:b.n,r:b.r});const ret=S.draft&&S.draft._returnTo;if(ret){S.draft._returnTo=undefined;go(ret);}else go('adicionar');});
 
@@ -878,7 +909,12 @@ $('#btnPanico').addEventListener('click',()=>{
 });
 btnMore.addEventListener('click',e=>{
   e.stopPropagation();if(!menu.hidden){closeMenu();return}
-  menu.innerHTML=`<button data-m="fit">${icon('expand')}Ver Recife inteiro</button>
+  menu.innerHTML=`<div class="sheet-bar menu-bar">
+      <span class="sheet-hint">Mais ações</span>
+      <button type="button" class="iconbtn help-btn" id="menuHelp" aria-label="Ajuda do menu">?</button>
+      <button type="button" class="iconbtn" id="menuClose" aria-label="Fechar menu">${icon('close')}</button>
+    </div>
+    <button data-m="fit">${icon('expand')}Ver Recife inteiro</button>
     <button data-m="panico">${icon('siren')}Alertas de pânico</button>
     <button data-m="obras">${icon('obra')}Obras públicas</button>
     <button data-m="choro" id="choroToggle" class="${choroOn?'active':''}" aria-pressed="${choroOn}">${icon('rank')}${choroOn?'Ocultar':'Ver'} mapa de calor</button>
@@ -889,10 +925,13 @@ btnMore.addEventListener('click',e=>{
     <div class="sep"></div>
     <a href="https://solucinona.vercel.app/" target="_blank" rel="noopener">${icon('ext')}Mapa de Riscos do Recife (soluCINona)</a>
     <p class="note" style="background:none">Feito pela comunidade. Não é um site da prefeitura.</p>`;
+  const mh=menu.querySelector('#menuHelp');if(mh)mh.addEventListener('click',e=>{e.stopPropagation();openHelp('menu')});
+  const mc=menu.querySelector('#menuClose');if(mc)mc.addEventListener('click',e=>{e.stopPropagation();closeMenu()});
   const r=btnMore.getBoundingClientRect(),w=$('.mapwrap').getBoundingClientRect();
   menu.style.top=(r.bottom-w.top+8)+'px';
   menu.style.right=(isDesk()?(w.right-r.right):12)+'px';menu.style.left='auto';
-  menu.hidden=false;btnMore.setAttribute('aria-expanded','true');menu.querySelector('button').focus();
+  menu.hidden=false;btnMore.setAttribute('aria-expanded','true');
+  const first=menu.querySelector('[data-m]');if(first)first.focus();
   menu.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('click',()=>{
     const m=b.dataset.m;
     if(m==='morro'){S.morro=!S.morro;document.body.classList.toggle('nomorro',!S.morro);b.setAttribute('aria-pressed',S.morro);save();return}
@@ -917,7 +956,7 @@ function openFilters(){
       S.filt.st=new Set([...m.querySelectorAll('input[name=fs]:checked')].map(i=>i.value));
       closeModal();renderMarkers();if(S.view==='mapa')renderPanel();toast(`${shown().length} pontos no mapa`,'filter')});
     m.querySelector('input').focus();
-  });
+  },null,'filtros');
 }
 $('#legendBody').innerHTML=`<h4>Tipo</h4><div class="lg-grid">${Object.keys(CATS).map(k=>`<span class="lg-item"><span class="lg-cat">${icon(k)}</span>${CATS[k].n}</span>`).join('')}</div>
   <h4>Situação</h4><div style="display:grid;gap:6px">${Object.keys(STATUS).map(k=>`<span class="lg-item">${shape(k,18)}${STATUS[k].n}</span>`).join('')}</div>
@@ -929,9 +968,11 @@ $('#legendBody').innerHTML=`<h4>Tipo</h4><div class="lg-grid">${Object.keys(CATS
 
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape')return;
+  if(document.querySelector('.help-scrim')){closeHelp();return}
   if($('#scrim')){closeModal(true);return}
   if(!menu.hidden){closeMenu();btnMore.focus();return}
-  if(S.view==='detalhe')go('mapa');
+  if(S.view==='pick'){const c=$('#pickCancel');if(c)c.click();return}
+  if(S.view!=='mapa')goBack();
 });
 window.addEventListener('resize',()=>map.invalidateSize());
 
@@ -1332,6 +1373,7 @@ function bindNewFeatures(v,on){
       saveO();renderObraMarkers();go('obraDetalhe');toast('Verificação registrada','check');});
   }
   if(v==='mensagens'){
+    if(S.user){let dirty=false;S.messages.forEach(m=>{if(m.de===S.user.name&&m.resposta&&!m.respLida){m.respLida=true;dirty=true}});if(dirty)saveM()}
     on('msgLogin','click',()=>go('conta'));
     on('enviarMsg','click',()=>{if(!S.user)return;
       const txt=$('#msgTxt').value.trim();if(!txt){$('#msgErr').style.display='flex';return;}$('#msgErr').style.display='none';
@@ -1343,7 +1385,7 @@ function bindNewFeatures(v,on){
       const mid=btn.dataset.mid,m=S.messages.find(x=>x.id===mid);
       const inp=document.querySelector(`.msg-reply[data-mid="${mid}"]`);
       if(!m||!inp||!inp.value.trim()){toast('Escreva uma resposta','note');return;}
-      m.resposta={texto:inp.value.trim(),ts:Date.now()};saveM();toast('Resposta enviada','check');go('lider');
+      m.resposta={texto:inp.value.trim(),ts:Date.now()};m.respLida=false;saveM();toast('Resposta enviada','check');go('lider');
     }));
     document.querySelectorAll('.obra-card').forEach(c=>c.addEventListener('click',()=>{S.selO=c.dataset.oid;go('obraDetalhe');}));
   }
@@ -1358,15 +1400,17 @@ function bindNewFeatures(v,on){
   $('#legend').open=isDesk();fitRecife();
   renderTop();renderMarkers();
   renderPanicoMarkers();renderObraMarkers();
-  const h=(location.hash||'').slice(1);
+  const h=decodeURIComponent((location.hash||'').slice(1));
   if(h&&byId(h))openDetail(h);
-  else if(['ranking','votacao','conta'].includes(h))go(h);
+  else if(h.startsWith('panico:')){const id=h.slice(7);if(S.panics.some(p=>p.id===id)){S.selP=id;go('panicoDetalhe')}else go('panico')}
+  else if(h.startsWith('obra:')){const id=h.slice(5);if(S.obras.some(o=>o.id===id)){S.selO=id;go('obraDetalhe')}else go('obras')}
+  else if(HASH_VIEWS.has(h))go(h);
   else go('mapa');
 
   }
 
   Object.assign(app, {
-    boot, go, renderPanel, bindPanel, S, save, map, renderMarkers,
+    boot, go, goBack, closeToMap, renderPanel, bindPanel, S, save, map, renderMarkers,
     renderPanicoMarkers, renderObraMarkers, openDetail, select, fitRecife,
     renderTop, toggleTheme, isDark, all, byId, shown, apoios,
   });
