@@ -1,10 +1,10 @@
 /* Reset mínimo, tipografia base e ícones SVG sprite */
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.5;overflow:hidden}
 *{box-sizing:border-box}
 button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer}
-h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.25}
 p{margin:0}
 .ic{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ic.sm{width:18px;height:18px}.ic.lg{width:28px;height:28px}

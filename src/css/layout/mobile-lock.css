@@ -1,0 +1,248 @@
+/* mobile-lock.css — 1.10.2
+ * Importado por último em app.css.
+ *
+ * Por que existe:
+ *   responsive-fix.css é importado ANTES de components/ui.css e features/fase1.css.
+ *   Regras posteriores (grade .stats com 1fr, .gallery/.ph-item com flex-basis fixo,
+ *   botões com white-space:nowrap do UA, min-width:auto de itens de grid) voltam a
+ *   impor a largura mínima do conteúdo e empurram o painel para fora da viewport
+ *   do celular — mesmo com o painel desktop (560px) corretamente isolado em
+ *   @media (min-width: 960px).
+ *
+ *   Este arquivo só atua abaixo de 960px. Nenhuma regra aqui altera desktop,
+ *   tablet largo tratado como desktop, nem a largura ampliada do painel esquerdo.
+ */
+
+@media (max-width: 959.98px) {
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  /* O mapa ocupa a tela inteira. left do desktop (560px / 48vw) não vale aqui. */
+  .mapwrap {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Qualquer painel: nunca mais largo que a viewport, nunca com min-width de desktop. */
+  .panel {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  body[data-view="detalhe"] .panel {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body:is(
+    [data-view="ranking"],
+    [data-view="votacao"],
+    [data-view="conta"],
+    [data-view="adicionar"],
+    [data-view="sucesso"],
+    [data-view="alertas"],
+    [data-view="panico"],
+    [data-view="panicoAdd"],
+    [data-view="panicoDetalhe"],
+    [data-view="obras"],
+    [data-view="obraAdd"],
+    [data-view="obraDetalhe"],
+    [data-view="mensagens"],
+    [data-view="lider"]
+  ) .panel {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    inset: 0;
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pin-inner,
+  .pin-inner > *,
+  .dhead,
+  .row,
+  .sheet-bar,
+  .conta-head,
+  .conta-id,
+  .conta-actions,
+  .list,
+  .listbtn,
+  .card,
+  .loginbox,
+  .field,
+  .note,
+  .coupon,
+  .support,
+  .gallery,
+  .seg,
+  .choices,
+  .cats {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .dhead { flex-wrap: wrap; }
+  .sheet-bar { flex-wrap: wrap; }
+
+  /* ui.css redefine .stats como repeat(3, 1fr) DEPOIS do responsive-fix.
+     1fr com min-width:auto usa o min-content e estoura telas estreitas. */
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .stats div,
+  .stats span,
+  .stats b {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .row > .btn,
+  .row > .btn-wa,
+  .conta-actions .btn,
+  .btn {
+    white-space: normal;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .gallery {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .ph-item {
+    flex: 0 0 min(220px, 78%);
+    max-width: 78%;
+  }
+
+  .tabbar {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow: hidden;
+  }
+  .tabbar button {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  .tabic { max-width: 100%; }
+  .tabbar button[aria-current="page"] .tabic {
+    width: min(64px, 100%);
+  }
+  .tab-lbl {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .legend {
+    left: 12px;
+    right: auto;
+    max-width: calc(100vw - 24px);
+    width: min(290px, calc(100vw - 24px));
+    box-sizing: border-box;
+  }
+
+  .maptools,
+  .mtools-row,
+  .mtools-title,
+  .fab,
+  .pickbar,
+  .menu {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .mtools-title { width: auto; }
+
+  .modal,
+  .help-modal {
+    width: min(480px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+  }
+
+  /* Conteúdo geral pode limitar largura; Leaflet NÃO. */
+  img, video, canvas {
+    max-width: 100%;
+  }
+  .brand .mark,
+  .avatar,
+  .ic,
+  .tabic svg,
+  .pin-panico,
+  .pin-obra-map {
+    max-width: none;
+  }
+
+  /* Máscara/bairros/tiles do mapa: nunca max-width (senão o OSM
+     “gigante” aparece por baixo do recorte). */
+  .mapwrap, #map, .leaflet-container {
+    overflow: hidden !important;
+  }
+  .leaflet-container img,
+  .leaflet-container svg,
+  .leaflet-pane img,
+  .leaflet-pane svg,
+  .leaflet-tile,
+  .leaflet-marker-icon,
+  .leaflet-marker-shadow,
+  .leaflet-image-layer,
+  .leaflet-overlay-pane svg,
+  .leaflet-zoom-animated {
+    max-width: none !important;
+    max-height: none !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .stats { grid-template-columns: 1fr; }
+  .stats div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+  }
+  .cats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .conta-actions { grid-template-columns: 1fr; }
+}
+
+/* Tablet retrato / paisagem ainda abaixo do desktop: duas colunas onde cabe. */
+@media (min-width: 600px) and (max-width: 959.98px) {
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .conta-actions { grid-template-columns: 1fr 1fr; }
+  .cats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

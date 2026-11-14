@@ -273,8 +273,8 @@ map.on('move',()=>{if(S.view==='pick')updatePick()});
 
 /* ---------- tema claro/escuro ---------- */
 function isDark(){
-  const t=document.documentElement.dataset.theme;
-  return t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+  /* Padrão da app é claro. Escuro só com data-theme="dark" (escolha salva). */
+  return document.documentElement.dataset.theme==='dark';
 }
 function toggleTheme(){
   const next=isDark()?'light':'dark';
@@ -341,17 +341,22 @@ function need(fn,why){
     'entrar');
 }
 let modalClose=null;
-function modal(html,init,onCancel,helpKey){
+function modal(html,init,onCancel,helpKey,opts){
+  opts=opts||{};
+  const closeBtn=opts.hideClose?'':`<button type="button" class="iconbtn" data-close aria-label="Fechar">${icon('close')}</button>`;
   const L2=$('#layer');
   L2.innerHTML=`<div class="scrim" id="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
     <div class="sheet-bar">
-      <span class="sheet-hint">Janela</span>
+      <span class="sheet-hint">${opts.hint||'Janela'}</span>
       <button type="button" class="iconbtn help-btn" id="modalHelp" aria-label="Ajuda desta janela">?</button>
-      <button type="button" class="iconbtn" data-close aria-label="Fechar">${icon('close')}</button>
+      ${closeBtn}
     </div>
-    ${html}</div></div>`;
+    <div class="modal-body" id="modalBody">${html}</div></div></div>`;
   const sc=$('#scrim');modalClose=onCancel||null;
-  sc.addEventListener('click',e=>{if(e.target===sc||e.target.closest('[data-close]')){closeModal(true)}});
+  sc.addEventListener('click',e=>{
+    if(opts.lockScrim&&e.target===sc)return;
+    if(e.target===sc||e.target.closest('[data-close]')){closeModal(true)}
+  });
   const hb=sc.querySelector('#modalHelp');
   if(hb)hb.addEventListener('click',e=>{e.stopPropagation();openHelp(helpKey||'janela')});
   init&&init(sc);
@@ -493,6 +498,15 @@ function vMapa(){
     <div class="ph"><span class="eyebrow">Recife · mapa dos moradores</span><h2>O que o bairro está vendo</h2>
       <p>Veja o que os vizinhos marcaram: obra que não veio, obra que não resolveu e paliativo. Ver é livre; para marcar, apoiar ou votar, entre na sua conta.</p></div>
     <div class="stats"><div><b>${all().length}</b><span>pontos</span></div><div><b>${tot}</b><span>apoios</span></div><div><b>${sem}</b><span>esperando solução</span></div></div>
+    <div class="nav-hint-card">
+      <b>Menu principal (sempre à mão)</b>
+      <p class="sub2">No celular: barra de baixo com Mapa, Ranking, Alertas, Obras e Conta. No computador: menu no topo. No mapa: botões amarelo e vermelho no canto.</p>
+      <div class="row">
+        <button type="button" class="btn sec" data-go="ranking">${icon('rank','sm')}Ranking</button>
+        <button type="button" class="btn sec" data-go="votacao">${icon('vote','sm')}Votação</button>
+        <button type="button" class="btn sec" data-go="conta">${icon('user','sm')}Conta</button>
+      </div>
+    </div>
     <button class="btn acc full" id="pAdd">${icon('plus')}Adicionar ponto</button>
     <div class="kv" style="justify-content:space-between"><h3 class="sec">Neste trecho do mapa (${here.length})</h3>
       <button class="btn ghost" id="pFilt">${icon('filter','sm')}${filtered?'Filtros ativos':'Filtrar'}</button></div>
@@ -510,8 +524,7 @@ function vDetalhe(){
     <div class="dhead"><div style="flex:1;min-width:0;display:grid;gap:8px">
       <div class="kv">${catChip(p.c)}${stChip(p.s)}</div>
       <h2>${esc(p.t)}</h2>
-      <p class="sub2">${esc(p.b)} · RPA ${p.r} ${RPA[p.r]} · marcado há ${tempo(d)}</p></div>
-      <button class="iconbtn" id="dClose" aria-label="Fechar">${icon('close')}</button></div>
+      <p class="sub2">${esc(p.b)} · RPA ${p.r} ${RPA[p.r]} · marcado há ${tempo(d)}</p></div></div>
     <div>
       <div class="gallery-hd"><h3 class="sec" style="margin:0">${icon('camera','sm')}Fotos${ph.filter(x=>x.img).length?` <span class="badge-cnt">${ph.filter(x=>x.img).length}</span>`:''}</h3></div>
       <div class="gallery" aria-label="Fotos dos moradores">${ph.map(x=>`<figure class="ph-item" style="margin:0">${x.svg?`<div class="ph-ex">${x.svg}</div>`:`<img src="${x.img}" alt="Foto de morador" loading="lazy">`}<figcaption>${esc(x.cap)}</figcaption></figure>`).join('')}<button class="ph-add" id="dPhoto2">${icon('camera','lg')}Enviar foto</button></div></div>
@@ -556,8 +569,11 @@ function vRanking(){
       <p>Os 3 primeiros de cada região entram na votação do mês da associação.</p></div>
     ${areaSel('areaR')}
     <div class="seg" role="group" aria-label="Ordenar"><button aria-pressed="${S.rankMode==='apoios'}" data-rm="apoios">Mais apoiados</button><button aria-pressed="${S.rankMode==='tempo'}" data-rm="tempo">Mais tempo esperando</button></div>
-    <ol class="list" style="list-style:none;margin:0;padding:0">${l.map((p,i)=>`<li class="rank${i<3&&S.rankMode==='apoios'?' top':''}"><span class="pos">${i+1}º</span>${listItem(p)}</li>`).join('')||'<li class="note">Nenhum problema aberto nesta região.</li>'}</ol>
-    <div class="sticky-cta"><button class="btn acc full" id="toVote">${icon('vote')}Votar aqui</button></div>
+    <ol class="list" style="list-style:none;margin:0;padding:0">${l.map((p,i)=>`<li class="rank${i<3&&S.rankMode==='apoios'?' top':''}"><span class="pos">${i+1}º</span>
+      <div class="rank-vote-row">${listItem(p)}
+        <button type="button" class="btn sec btn-vote-quick" data-go-vote="${p.id}" data-area-r="${p.r}">${icon('vote','sm')} Votar neste problema</button>
+      </div></li>`).join('')||'<li class="note">Nenhum problema aberto nesta região.</li>'}</ol>
+    <div class="sticky-cta"><button class="btn acc full" id="toVote">${icon('vote')}Ir para a votação do mês</button></div>
   </div>`;
 }
 function voteOpts(){return all().filter(p=>inArea(p)&&(p.s==='sem'||p.s==='paliativo'||p.s==='associacao')).sort((a,b)=>apoios(b)-apoios(a)).slice(0,3)}
@@ -629,23 +645,24 @@ function vConta(){
 function vAdicionar(){
   const d=S.draft||{};
   return `<form class="pin-inner" id="addForm" novalidate>
-    <div class="dhead"><div style="flex:1"><span class="eyebrow">Novo ponto</span><h2>Adicionar ponto</h2></div>
-      <button type="button" class="iconbtn" id="aClose" aria-label="Cancelar">${icon('close')}</button></div>
+    <div class="dhead"><div style="flex:1"><span class="eyebrow">Novo ponto</span><h2>Contar o problema</h2>
+      <p class="sub2">Pode corrigir qualquer campo antes de enviar. Use Voltar se quiser parar.</p></div></div>
+    <p class="form-reassure">${icon('check','sm')} Nada é enviado até você tocar em <b>Publicar no mapa</b>. Dá para limpar os textos e trocar o local.</p>
     <div class="card kv"><span class="cicon" style="width:44px;height:44px;border-radius:50%;background:var(--accent);color:#0B0B0F;display:grid;place-items:center;border:2px solid #0B0B0F">${icon('pin')}</span>
       <div style="flex:1;min-width:0"><b>${esc(d.b)}</b><div class="sub2">Local aproximado · RPA ${d.r} ${RPA[d.r]||''}</div></div>
       <button type="button" class="btn ghost" id="chgLoc">Trocar local</button></div>
     <fieldset class="field" id="fCat" style="border:0;padding:0;margin:0"><legend class="flabel" style="margin-bottom:8px">Que tipo de problema?</legend>
       <div class="cats">${Object.keys(CATS).map(k=>`<label class="choice"><input type="radio" name="cat" value="${k}"${d.c===k?' checked':''}><span>${icon(k,'lg')}${CATS[k].n}</span></label>`).join('')}</div>
       <span class="ferr">${icon('alert','sm')}Escolha o tipo de problema.</span></fieldset>
-    <div class="field" id="fTitle"><label for="aTitle">O que está acontecendo?</label>
+    <div class="field" id="fTitle"><label for="aTitle">Em uma frase, o que está acontecendo?</label>
       <input class="input" id="aTitle" maxlength="80" value="${esc(d.t||'')}" placeholder="Ex.: Barreira cedendo atrás da escadaria">
       <span class="ferr">${icon('alert','sm')}Escreva em poucas palavras o que está acontecendo.</span></div>
     <div class="field"><label for="aRef">Rua ou ponto de referência</label>
-      <input class="input" id="aRef" maxlength="100" value="${esc(d.ref||'')}" placeholder="Ex.: perto da escola municipal">
+      <input class="input" id="aRef" maxlength="100" value="${esc(d.ref||'')}" placeholder="Ex.: perto da escola municipal, ao lado do ponto de ônibus">
       <span class="hint">Opcional. Só a associação vê.</span></div>
-    <div class="field"><label for="aDesc">Conte com suas palavras</label>
-      <textarea class="textarea" id="aDesc" maxlength="400" placeholder="Desde quando acontece, quem é afetado, o que já tentaram.">${esc(d.desc||'')}</textarea>
-      <span class="hint">Opcional.</span></div>
+    <div class="field"><label for="aDesc">Detalhes que ajudam (tamanho, tempo, risco)</label>
+      <textarea class="textarea" id="aDesc" maxlength="400" placeholder="Ex.: Começou há 2 meses. Atinge 3 casas. Quando chove forte a terra desce. Já ligaram para a Defesa Civil.">${esc(d.desc||'')}</textarea>
+      <span class="hint">Opcional, mas ajuda muito. Diga desde quando, quem é afetado e se já tentaram resolver.</span></div>
     <fieldset class="field" style="border:0;padding:0;margin:0"><legend class="flabel" style="margin-bottom:8px">A prefeitura já mexeu aqui?</legend>
       <div class="choices">${[['nunca','Nunca mexeu'],['paliativo','Fez, mas voltou'],['naosei','Não sei']].map(o=>`<label class="choice"><input type="radio" name="pal" value="${o[0]}"${(d.pal||'naosei')===o[0]?' checked':''}><span>${o[1]}</span></label>`).join('')}</div></fieldset>
     <div class="field"><span class="flabel">Fotos</span>
@@ -653,15 +670,20 @@ function vAdicionar(){
         <button type="button" class="ph-add" id="aPhoto">${icon('camera','lg')}Anexar foto</button></div>
       <span class="hint">Opcional, mas ajuda muito. Evite mostrar rosto ou número da casa.</span></div>
     <div class="note">${icon('eye')}<span>No mapa aparece só o tipo, a foto e um ponto aproximado. Seu nome não aparece.</span></div>
-    <button class="btn acc full">${icon('plus')}Adicionar ao mapa</button>
+    <div class="row">
+      <button type="button" class="btn ghost" id="aClear">${icon('close','sm')}Limpar textos</button>
+      <button type="submit" class="btn acc full">${icon('plus')}Publicar no mapa</button>
+    </div>
   </form>`;
 }
 function vSucesso(){
   const p=byId(S.lastAdded);if(!p)return vMapa();
   return `<div class="pin-inner" style="text-align:center;justify-items:center">
-    <div style="width:84px;height:84px;border-radius:50%;background:var(--accent);border:3px solid #0B0B0F;display:grid;place-items:center;color:#0B0B0F;margin-top:12px">${icon('check','lg')}</div>
-    <h2 style="font-size:26px;font-weight:900">Seu ponto está no mapa</h2>
-    <p class="sub2" style="max-width:34ch">Agora os vizinhos podem ver e apoiar. Quanto mais apoio, mais chance de entrar na votação do mês.</p>
+    <div class="success-banner" role="status" aria-live="polite">
+      <div class="ok-ico">${icon('check','lg')}</div>
+      <h2 style="font-size:26px;font-weight:900;margin:0">Problema registrado com sucesso!</h2>
+      <p class="sub2" style="max-width:36ch;margin:0">Seu ponto já aparece no mapa. Os vizinhos podem ver e apoiar. Quanto mais apoio, mais chance de entrar na votação do mês.</p>
+    </div>
     <div class="card" style="width:100%;text-align:left">${listItem(p)}</div>
     <button class="btn acc full" id="sShare">${icon('share')}Chamar vizinhos no WhatsApp</button>
     <button class="btn sec full" id="sSee">${icon('map')}Ver no mapa</button>
@@ -674,7 +696,7 @@ function bindPanel(){
   const on=(id,ev,fn)=>{const el=panel.querySelector('#'+id);if(el)el.addEventListener(ev,fn)};
   on('navBack','click',goBack);
   on('navHelp','click',()=>openHelp(S.view));
-  on('navClose','click',closeToMap);
+  on('navClose','click',()=>{if(S.view==='adicionar'||S.view==='pick'){S.draft=null}closeToMap();});
   on('pAdd','click',startAdd);on('cAdd','click',startAdd);
   on('pFilt','click',openFilters);
   on('dClose','click',()=>go('mapa'));
@@ -701,13 +723,24 @@ function bindPanel(){
   on('goMsgs','click',()=>go('mensagens'));
   on('goLider','click',()=>{if(S.user){if(S.user.role!=='lider'){S.user.role='lider';save();toast('Modo líder ativado','users');}go('lider');}});
   on('logout','click',()=>{S.user=null;save();renderTop();go('mapa');toast('Você saiu da conta.');});
-  on('aClose','click',()=>{S.draft=null;go('mapa')});
+  on('aClear','click',()=>{if(!S.draft)return;S.draft.t='';S.draft.ref='';S.draft.desc='';const t=$('#aTitle'),rf=$('#aRef'),d=$('#aDesc');if(t)t.value='';if(rf)rf.value='';if(d)d.value='';toast('Textos limpos. O local e o tipo continuam.','check');});
   on('chgLoc','click',()=>{keepDraft();go('pick')});
   on('aPhoto','click',()=>{keepDraft();pickFile('draft')});
   on('addForm','input',keepDraft);on('addForm','change',keepDraft);
   on('addForm','submit',submitAdd);
   on('sShare','click',()=>share(byId(S.lastAdded)));
   on('sSee','click',()=>openDetail(S.lastAdded));
+  panel.querySelectorAll('[data-go-vote]').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    const rr=b.getAttribute('data-area-r');
+    if(rr!=null && rr!=='') S.area=String(rr);
+    go('votacao');
+    toast('Na votação do mês, escolha o problema que mais importa.','check');
+  }));
+  panel.querySelectorAll('[data-go]').forEach(b=>{
+    if(b.closest('.tabbar')||b.closest('.topnav'))return;
+    b.addEventListener('click',()=>go(b.dataset.go));
+  });
   // Fase 1: bind after each panel render (on is in this closure)
   bindNewFeatures(S.view, on);
 }
@@ -857,8 +890,10 @@ function submitAdd(e){
   if(!ok){(panel.querySelector('.field.err input')||panel.querySelector('.field.err')).focus?.();panel.querySelector('.field.err').scrollIntoView({block:'center',behavior:'smooth'});return}
   const p={id:'u'+Date.now(),t:d.t.trim(),c:d.c,s:d.pal==='paliativo'?'paliativo':'sem',b:d.b,r:d.r,a:1,lat:d.lat,lng:d.lng,created:Date.now(),ref:(d.ref||'').trim(),desc:(d.desc||'').trim(),photos:d.photos||[]};
   S.mine.push(p);save();S.draft=null;S.lastAdded=p.id;renderMarkers();
-renderPanicoMarkers();
-renderObraMarkers();go('sucesso');
+  renderPanicoMarkers();
+  renderObraMarkers();
+  toast('Problema registrado com sucesso!','check');
+  go('sucesso');
   map.setView([p.lat,p.lng],Math.max(map.getZoom(),15));
 }
 let fileFor=null;
@@ -1100,8 +1135,7 @@ function vPanico(){
 function vPanicoAdd(){
   const d=S.draft||{};
   return `<form class="pin-inner" id="panicForm" novalidate>
-    <div class="dhead"><div style="flex:1"><span class="eyebrow" style="color:#DC2626">🚨 Alerta de emergência</span><h2>Registrar ocorrência</h2></div>
-      <button type="button" class="iconbtn" id="pClose">${icon('close')}</button></div>
+    <div class="dhead"><div style="flex:1"><span class="eyebrow" style="color:#DC2626">🚨 Alerta de emergência</span><h2>Registrar ocorrência</h2></div></div>
     <div class="card" style="background:#FEF2F2;border:1.5px solid #FECACA;margin-bottom:12px">
       ${icon('alert','sm')}<p style="margin:0;font-size:.8rem;color:#991B1B;display:inline"><b>Em risco de vida?</b> Ligue agora: Bombeiros 193 · SAMU 192 · Defesa Civil 199</p>
     </div>
@@ -1181,8 +1215,7 @@ function vObras(){
 function vObraAdd(){
   const d=S.draft||{};const today=new Date().toISOString().split('T')[0];
   return `<form class="pin-inner" id="obraForm" novalidate>
-    <div class="dhead"><div style="flex:1"><span class="eyebrow">Nova obra</span><h2>Registrar Obra Pública</h2></div>
-      <button type="button" class="iconbtn" id="oClose">${icon('close')}</button></div>
+    <div class="dhead"><div style="flex:1"><span class="eyebrow">Nova obra</span><h2>Registrar Obra Pública</h2></div></div>
     <div class="card kv" style="margin-bottom:12px">
       <div style="flex:1"><b>${esc(d.b||'Localização não selecionada')}</b><div class="sub2">Local da obra</div></div>
       <button type="button" class="btn ghost" id="oChgLoc">Alterar</button>
@@ -1406,7 +1439,63 @@ function bindNewFeatures(v,on){
 
 
 
-  function boot() {
+
+function maybeOnboard(){
+  try{if(localStorage.getItem('mutirao.onboarded')==='1')return}catch(e){return}
+  let busy=false;
+  const step1=`<h2 id="mt">Bem-vindo ao Mutirão</h2>
+    <p class="sub2">Este mapa é feito pelos moradores. Não é site da prefeitura.</p>
+    <ol class="onboard-steps">
+      <li><span class="n">1</span><span><b>Ver o mapa</b> — toque nos pinos coloridos para abrir cada problema.</span></li>
+      <li><span class="n">2</span><span><b>Contar um problema</b> — use o botão amarelo “Adicionar ponto” e marque o local.</span></li>
+      <li><span class="n">3</span><span><b>Apoiar e votar</b> — no Ranking e na Votação do mês você ajuda a priorizar.</span></li>
+    </ol>
+    <p class="note">${icon('users')}<span>No celular, o menu fica na barra de baixo: Mapa, Ranking, Alertas, Obras e Conta.</span></p>
+    <button type="button" class="btn acc full" id="onboardOk">Entendi, vamos lá</button>`;
+  const step2=`<h2 id="mt">Antes de continuar</h2>
+    <p class="sub2" style="margin-bottom:8px">Deseja que esta mensagem de boas-vindas <b>não apareça novamente</b>?</p>
+    <div class="onboard-choice" style="display:grid;gap:10px;margin-top:8px">
+      <button type="button" class="btn acc full" id="onboardNever">Sim, não mostrar novamente</button>
+      <button type="button" class="btn sec full" id="onboardAgain">Não, continuar mostrando</button>
+    </div>
+    <p class="note" style="margin-top:12px">${icon('note','sm')}<span>Você pode reler as instruções a qualquer momento pelo botão <b>?</b>.</span></p>`;
+  modal(step1, sc=>{
+    const body=sc.querySelector('#modalBody');
+    const goStep2=()=>{
+      if(busy)return;
+      busy=true;
+      const ok=sc.querySelector('#onboardOk');
+      if(ok)ok.disabled=true;
+      if(body){
+        body.style.opacity='0';
+        body.style.transition='opacity .18s ease';
+        setTimeout(()=>{
+          body.innerHTML=step2;
+          body.style.opacity='1';
+          busy=false;
+          const never=sc.querySelector('#onboardNever');
+          const again=sc.querySelector('#onboardAgain');
+          const finish=(hideForever)=>{
+            if(busy)return;
+            busy=true;
+            if(never)never.disabled=true;
+            if(again)again.disabled=true;
+            if(hideForever){
+              try{localStorage.setItem('mutirao.onboarded','1')}catch(e){}
+            }
+            closeModal(false);
+          };
+          never&&never.addEventListener('click',()=>finish(true));
+          again&&again.addEventListener('click',()=>finish(false));
+          never&&never.focus();
+        },180);
+      }
+    };
+    sc.querySelector('#onboardOk')?.addEventListener('click',goStep2);
+  }, null, 'mapa', {hideClose:true, lockScrim:true, hint:'Boas-vindas'});
+}
+
+function boot() {
 
   $('#legend').open=isDesk();fitRecife();
   renderTop();renderMarkers();
@@ -1417,6 +1506,7 @@ function bindNewFeatures(v,on){
   else if(h.startsWith('obra:')){const id=h.slice(5);if(S.obras.some(o=>o.id===id)){S.selO=id;go('obraDetalhe')}else go('obras')}
   else if(HASH_VIEWS.has(h))go(h);
   else go('mapa');
+  setTimeout(maybeOnboard, 400);
 
   }
 

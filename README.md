@@ -1,121 +1,125 @@
-# Mutirão · Recife — E7 Protótipo
+# Mutirão · Recife
 
-Mapa colaborativo de problemas de bairro no Recife. Moradores marcam barreiras, alagamentos, buracos e obras paradas; a associação leva os mais votados ao vereador. A Fase 1 acrescenta emergência (pânico), fiscalização de obra pública e mensagem ao líder de bairro.
+Mapa colaborativo em que moradores marcam problemas do bairro (barreiras, alagamentos, buracos, esgoto, lixo, obras paradas). Ver é livre; marcar, apoiar e votar exige conta local. A associação usa o ranking e a votação do mês para priorizar o que levar ao vereador.
 
-> **Para IAs e desenvolvedores:** leia [`DOCUMENTATION/AI_CONTEXT_GUIDE.md`](DOCUMENTATION/AI_CONTEXT_GUIDE.md) antes de modificar qualquer arquivo.  
-> **Infraestrutura:** [`DOCUMENTACAO_INFRAESTRUTURA.md`](DOCUMENTACAO_INFRAESTRUTURA.md)  
-> **Fase 1:** [`DOCUMENTATION/FASE1.md`](DOCUMENTATION/FASE1.md) · **JS modular:** [`src/js/STRUCTURE.md`](src/js/STRUCTURE.md)
+**Versão funcional documentada: 1.11.2** (novembro/2026)  
+`package.json` permanece em `1.0.0` (versão de pacote npm); o histórico de produto está em [`DOCUMENTATION/DEVELOPMENT/CHANGELOG.md`](DOCUMENTATION/DEVELOPMENT/CHANGELOG.md).
+
+---
 
 ## Stack
 
-Vanilla HTML + CSS + JavaScript (sem framework, sem bundler).  
-Mapa: Leaflet 1.9.4 + OpenStreetMap tiles (sem API key).  
-Geocodificação: Nominatim OSM (sem API key).  
-Namespace global: `window.Mutirao` (core + services).
+| Camada | Tecnologia |
+|--------|------------|
+| UI | HTML + CSS + JavaScript (sem framework, sem bundler) |
+| Mapa | Leaflet 1.9.4 + MarkerCluster 1.5.3 (CDN) |
+| Tiles | OpenStreetMap |
+| Geocode | Nominatim OSM (debounce; sem API key) |
+| Persistência | `localStorage` (estado do protótipo) |
+| Entrada JS | ES modules: `src/js/modules/main.js` → `createApp` → `installRuntime` |
+| Namespace legado | `window.Mutirao` (util, toast, help) |
 
-## Estrutura
+Não há backend de aplicação. Tudo roda no navegador.
+
+---
+
+## Estrutura do repositório
 
 ```
 mutirao/
-├── index.html                 # Entrada — 181 linhas (HTML + SVG + scripts)
+├── index.html                      # Shell HTML, SVG sprite, scripts
 ├── src/
 │   ├── css/
-│   │   ├── vendor.css              # Leaflet + MarkerCluster
-│   │   ├── app.css                 # Entrada (@import dos módulos)
-│   │   ├── tokens/design-tokens.css
+│   │   ├── app.css                 # @import (ordem = cascata)
+│   │   ├── tokens/design-tokens.css # Temas claro (padrão) e escuro
 │   │   ├── base/{reset,animations}.css
-│   │   ├── layout/shell.css
-│   │   ├── layout/responsive-fix.css  # overflow, breakpoints, a11y
+│   │   ├── layout/{shell,responsive-fix,mobile-lock}.css
 │   │   ├── components/{ui,overlays,pickbar}.css
 │   │   ├── map/{chrome,markers,layers}.css
-│   │   └── features/fase1.css
+│   │   ├── features/fase1.css
+│   │   └── vendor.css              # Leaflet (carregado no index)
 │   └── js/
-│       ├── core/
-│       │   ├── util.js        # $, esc, icon, norm, hash, tempo, fmt
-│       │   ├── constants.js   # CATS, STATUS, RPA, PANICO_*, OBRA_ST, NAVOF
-│       │   └── toast.js       # toast() com auto-dismiss (canônico)
-│       ├── services/
-│       │   ├── geocode.js     # reverseGeocode, geocodeSearch
-│       │   ├── gps.js         # getGPS
-│       │   └── share.js       # helpers de compartilhamento
-│       ├── views/             # registro por tela (ver views/README.md)
-│       ├── data/              # bairros, vizinhos, seed, riscos, env
-│       ├── app.js             # mapa, estado, rotas, views, bind, boot (~1405 linhas, 85 funções)
+│       ├── modules/
+│       │   ├── main.js             # boot ES module
+│       │   ├── createApp.js
+│       │   ├── install/{runtime,dom,constants}.js
+│       │   ├── ui/{help,toast}.js
+│       │   └── lib/{dom,constants}.js
+│       ├── core/{util,constants,toast}.js   # namespace Mutirao (scripts clássicos)
+│       ├── services/{geocode,gps,share}.js
+│       ├── views/*.js              # registro de telas
+│       ├── data/{bairros,vizinhos,seed,riscos,env}.js
+│       ├── app.js                  # legado (aponta para modules/)
 │       └── STRUCTURE.md
 ├── scripts/inject-env.mjs
-├── DOCUMENTATION/
-│   ├── AI_CONTEXT_GUIDE.md
-│   ├── FASE1.md
-│   ├── ARCHITECTURE/SYSTEM_OVERVIEW.md
-│   ├── BUGFIXES/BUGFIX_REPORT.md
-│   ├── TESTING/TEST_EXECUTION_REPORT.md
-│   └── DEVELOPMENT/CHANGELOG.md
+├── DOCUMENTATION/                  # ver índice abaixo
+├── DOCUMENTACAO_INFRAESTRUTURA.md
 ├── package.json
 ├── vercel.json
 └── .env.example
 ```
 
-## Ordem de scripts (`index.html`)
+---
 
-1. Leaflet + MarkerCluster (CDN)  
-2. `data/*` → globais `BAIRROS`, `VIZINHOS`, `SEED`, `RISCOS`, `ENV`  
-3. `core/util` → `core/constants` → `core/toast`  
-4. `services/geocode` → `gps` → `share`  
-5. `views/*` (registro de telas)  
-6. `app.js` (IIFE; `toast` delega a `Mutirao.toast`)
+## Documentação (índice)
 
-## UI/UX (1.10)
+| Documento | Conteúdo |
+|-----------|----------|
+| [DOCUMENTATION/AI_CONTEXT_GUIDE.md](DOCUMENTATION/AI_CONTEXT_GUIDE.md) | Contexto para agentes e onboarding técnico |
+| [DOCUMENTATION/AI_GUIDELINES.md](DOCUMENTATION/AI_GUIDELINES.md) | Regras ao editar o código com IA |
+| [DOCUMENTATION/ARCHITECTURE/SYSTEM_OVERVIEW.md](DOCUMENTATION/ARCHITECTURE/SYSTEM_OVERVIEW.md) | Visão de sistema |
+| [DOCUMENTATION/ARCHITECTURE/DIAGRAMS.md](DOCUMENTATION/ARCHITECTURE/DIAGRAMS.md) | Diagramas (C4, sequência, navegação, dados) |
+| [DOCUMENTATION/ARCHITECTURE/DATA_AND_FLOWS.md](DOCUMENTATION/ARCHITECTURE/DATA_AND_FLOWS.md) | Modelo de dados e fluxos |
+| [DOCUMENTATION/DESIGN_SYSTEM.md](DOCUMENTATION/DESIGN_SYSTEM.md) | Tokens, temas claro/escuro, componentes |
+| [DOCUMENTATION/DEVELOPMENT/CHANGELOG.md](DOCUMENTATION/DEVELOPMENT/CHANGELOG.md) | Histórico de versões |
+| [DOCUMENTATION/DEVELOPMENT/RESPONSIVE.md](DOCUMENTATION/DEVELOPMENT/RESPONSIVE.md) | Breakpoints e mobile-lock |
+| [DOCUMENTATION/FASE1.md](DOCUMENTATION/FASE1.md) | Pânico, obras, mensagens, líder |
+| [DOCUMENTATION/BUGFIXES/BUGFIX_REPORT.md](DOCUMENTATION/BUGFIXES/BUGFIX_REPORT.md) | Bugs corrigidos |
+| [DOCUMENTATION/TESTING/UIUX_AUDIT_REPORT.md](DOCUMENTATION/TESTING/UIUX_AUDIT_REPORT.md) | Auditoria UI/UX |
+| [DOCUMENTATION/TESTING/TEST_EXECUTION_REPORT.md](DOCUMENTATION/TESTING/TEST_EXECUTION_REPORT.md) | Testes manuais |
+| [DOCUMENTACAO_INFRAESTRUTURA.md](DOCUMENTACAO_INFRAESTRUTURA.md) | Infra, deploy, env |
 
-Auditoria de dimensionamento, responsividade e acessibilidade: ver [`DOCUMENTATION/TESTING/UIUX_AUDIT_REPORT.md`](DOCUMENTATION/TESTING/UIUX_AUDIT_REPORT.md).
+---
+
+## Funcionalidades (1.11.2)
+
+- **Mapa:** máscara regional, bairros, vizinhos, clusters, filtros, legenda, mapa de calor, riscos oficiais  
+- **Pontos:** adicionar (pick → formulário → sucesso), apoiar, fotos, notas, Street View, WhatsApp  
+- **Ranking e votação do mês** (com atalho de voto a partir do ranking)  
+- **Fase 1:** pânico, obras, alertas, mensagens ao líder, painel do líder  
+- **Conta** local (nome, bairro, tema)  
+- **Toasts** com auto-dismiss (token de geração + fallback `prefers-reduced-motion`)  
+- **Ajuda contextual (`?`)** e barra Voltar / Fechar  
+- **Onboarding em 2 etapas** (boas-vindas + “não mostrar novamente”)  
+- **Temas:** claro = padrão; escuro sob demanda (`mutirao.theme`)  
+- **Responsivo:** desktop painel ~560px; mobile com `mobile-lock.css` (Leaflet isento de `max-width`)
+
+---
 
 ## Rodar localmente
 
 ```bash
-npm run dev       # gera env.js + serve
+npm run dev       # inject-env + serve
 # ou
 npx serve .
 # ou
 python3 -m http.server 8080
 ```
 
-## Deploy na Vercel
+Abra a URL do servidor. Preferível origem `http` (geolocalização e tiles).
 
-1. Suba no GitHub  
-2. Importe no Vercel — **Framework:** `Other` (static)  
-3. **Root Directory:** `.` | **Build Command:** `node scripts/inject-env.mjs` | **Output:** `.`  
-4. Deploy  
+---
 
-## Funcionalidades
+## Persistência (`localStorage`)
 
-**Base**
+| Chave | Uso |
+|-------|-----|
+| `mutirao.v1` | Estado principal (user, pontos, votos, filtros, panics, obras, msgs…) |
+| `mutirao.theme` | `light` \| `dark` |
+| `mutirao.onboarded` | `1` se o usuário pediu para não ver boas-vindas de novo |
 
-- Mapa vetorial de Recife + 6 municípios da RMR  
-- World mask (tiles só nas cidades do GeoJSON)  
-- Pontos com GPS, Nominatim e crosshair  
-- Apoiar, notar, fotos, Street View, WhatsApp  
-- Choropleth, riscos oficiais (Defesa Civil), ranking, votação, conta  
-- Tema claro/escuro  
+---
 
-**Fase 1**
+## Identidade
 
-- **Pânico:** FAB, tipos, gravidade, marcadores pulsantes, resolver  
-- **Obras:** cadastro, status por datas/conclusão, histórico  
-- **Líder:** mensagens e painel (autoativação de `role`)  
-- **Hub Alertas** na tabbar (5 abas no mobile)  
-
-**Correções recentes (1.7.1)**
-
-- Toasts somem sozinhos (fallback se `animationend` não dispara)  
-- `bindNewFeatures` ligado a cada `bindPanel`  
-- Marcadores de pânico/obra no boot  
-- Painel mobile em tela cheia para as views da Fase 1  
-
-## Persistência
-
-| Chave localStorage | Conteúdo |
-|---|---|
-| `mutirao.v1` | user, mine, supported, notes, photos, votes, morro |
-| `mutirao.theme` | `'light'` / `'dark'` |
-| `mutirao.panics` | ocorrências de pânico (`S.panics`) |
-| `mutirao.obras` | obras públicas (`S.obras`) |
-| `mutirao.msgs` | mensagens ao líder (`S.messages`) |
+Feito pela comunidade. **Não é um site da prefeitura.** Protótipo para associação de moradores e cidadania digital no Recife.

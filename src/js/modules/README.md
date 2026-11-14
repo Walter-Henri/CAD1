@@ -1,30 +1,13 @@
-# modules/ — ES modules da aplicação
+# modules/ — aplicação ES module (1.11.2)
 
-## Bootstrap
+| Arquivo | Função |
+|---------|--------|
+| `main.js` | Instancia e chama `boot()` |
+| `createApp.js` | Monta o objeto `app` e instala runtime |
+| `install/runtime.js` | Mapa, estado, views, binds, onboarding |
+| `install/dom.js` / `constants.js` | Auxiliares de instalação |
+| `ui/help.js` | `HELP`, `sheetBar`, `openHelp` |
+| `ui/toast.js` | Bridge/UI de toast no módulo |
+| `lib/dom.js` / `constants.js` | Helpers compartilhados do módulo |
 
-```
-index.html
-  data/*.js (globais)
-  core/toast.js (Mutirao.toast)
-  modules/main.js   type=module
-    → createApp()
-        → install/dom.js
-        → install/constants.js
-        → install/runtime.js
-    → app.boot()
-```
-
-## Arquivos ativos
-
-| Arquivo | Responsabilidade |
-|---|---|
-| `main.js` | Entrada |
-| `createApp.js` | Composição |
-| `lib/dom.js` | Utilitários DOM/texto |
-| `lib/constants.js` | CATS, STATUS, chips |
-| `ui/toast.js` | Bridge de toast |
-| `install/dom.js` | Injeta utils em `app` |
-| `install/constants.js` | Injeta constantes em `app` |
-| `install/runtime.js` | Estado, mapa, rotas, views, eventos, Fase 1 |
-
-`src/js/app.js` na raiz de `js/` é **stub legado** e não é carregado.
+Não duplicar lógica de toast: a implementação canônica de auto-dismiss está em `core/toast.js`.

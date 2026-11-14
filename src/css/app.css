@@ -23,3 +23,5 @@
 @import url('./map/layers.css');
 @import url('./components/pickbar.css');
 @import url('./features/fase1.css');
+/* Último na cascata: trava mobile sem alterar o painel desktop (≥960px). */
+@import url('./layout/mobile-lock.css');

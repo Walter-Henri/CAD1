@@ -1,54 +1,18 @@
-# Estrutura JavaScript — Mutirão
+# Estrutura JS (1.11.2)
 
 ## Entrada
 
-```html
-<script type="module" src="src/js/modules/main.js"></script>
-```
+1. Scripts clássicos no `index.html`: `data/*` → `core/*` → `services/*` → `views/*`
+2. Módulo: `src/js/modules/main.js` → `createApp()` → `installRuntime(app)` → `boot()`
 
-Scripts clássicos **antes** do module: Leaflet, `data/*`, `core/toast.js`.
+## Pastas
 
-## Árvore
+| Pasta | Papel |
+|-------|-------|
+| `modules/` | App ES module (runtime, help, toast UI) |
+| `core/` | Utilitários e toast no namespace `Mutirao` |
+| `services/` | Nominatim, GPS, share |
+| `views/` | Registro de nomes de tela |
+| `data/` | GeoJSON e seed (globais) |
 
-```
-src/js/
-├── core/                    # clássico (toast canônico)
-│   ├── util.js
-│   ├── constants.js
-│   └── toast.js             # Mutirao.toast
-├── data/                    # globais BAIRROS, SEED, RISCOS…
-├── modules/                 # ES modules (aplicação)
-│   ├── main.js              # createApp() + boot()
-│   ├── createApp.js         # composição install*
-│   ├── application.js       # reexport boot (compat)
-│   ├── registry.js
-│   ├── lib/
-│   │   ├── dom.js           # $, esc, icon, tempo, fmt
-│   │   └── constants.js     # CATS, STATUS, chips
-│   ├── ui/
-│   │   └── toast.js         # bridge → Mutirao.toast
-│   ├── install/
-│   │   ├── dom.js
-│   │   ├── constants.js
-│   │   └── runtime.js       # estado, mapa, rotas, views, bind, F1
-│   └── STRUCTURE.md
-├── services/                # clássico legado (geocode/gps helpers)
-└── views/                   # registro legado de telas
-```
-
-## Fluxo
-
-```
-main.js
-  → createApp()
-       → installDom(app)
-       → installConstants(app)
-       → installRuntime(app)   # anexa S, map, go, boot, …
-  → app.boot()
-```
-
-## Como evoluir
-
-1. Utils puros → `modules/lib/`
-2. Nova feature isolada → `modules/install/<feature>.js` chamado em `createApp.js`
-3. Fatiar `runtime.js` → novos `install/*` recebendo o mesmo `app` e usando `app.S`, `app.map`, `app.go`
+A maior parte do HTML de painel e da lógica de mapa ainda vive em `modules/install/runtime.js`.

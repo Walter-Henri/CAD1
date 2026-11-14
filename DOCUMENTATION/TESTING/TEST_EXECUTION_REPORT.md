@@ -29,6 +29,34 @@ Sintaxe atual: `node --check` em `app.js` e módulos `core/` + `services/` → e
 
 ## Regressões a vigiar
 
+## 1.10.2 — responsividade (estático)
+
+| Checagem | Resultado |
+|----------|-----------|
+| `mobile-lock.css` é o último `@import` de `app.css` | Sim |
+| Regras de largura do painel nesse arquivo estão dentro de `max-width: 959.98px` | Sim |
+| Desktop `min(560px, 48vw)` permanece em `shell.css` / `responsive-fix.css` | Sim |
+| `node --check src/js/modules/install/runtime.js` | Executar na entrega |
+| Browser automatizado | Não há neste repositório |
+
+Procedimento manual: [`../DEVELOPMENT/RESPONSIVE.md`](../DEVELOPMENT/RESPONSIVE.md).
+
+
 - Não remover o fallback de toast  
 - Não tirar `bindNewFeatures` de `bindPanel`  
-- Não encolher a lista de `data-view` do painel mobile  
+- Não encolher a lista de `data-view` do painel mobile
+
+---
+
+## Bateria sugerida pós-1.11.2 (manual)
+
+| # | Caso | Esperado |
+|---|------|----------|
+| 1 | Limpar site data e abrir app | Tema claro; onboarding etapa 1 sem X |
+| 2 | Entendi → Sim, não mostrar | Não reaparece após F5 |
+| 3 | Entendi → Não, continuar | Reaparece após F5 |
+| 4 | Publicar ponto | Toast + banner sucesso |
+| 5 | Ranking → Votar neste | Abre votação na RPA |
+| 6 | Mobile mapa | Sem OSM “gigante” sob máscara |
+| 7 | Alternar tema | Escuro legível; preferência persiste |
+| 8 | `?` em qualquer tela | Ajuda contextual |

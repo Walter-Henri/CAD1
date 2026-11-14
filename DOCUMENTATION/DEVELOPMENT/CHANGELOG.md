@@ -1,4 +1,119 @@
+# Changelog — Mutirão · Recife
+
+Histórico funcional do produto. O `package.json` permanece em `1.0.0`; as versões abaixo descrevem entregas de código e documentação.
+
+---
+
+## [1.11.2] — Onboarding em duas etapas — 2026-11-14
+
+### Changed
+- Modal de boas-vindas **sem botão X** (apenas `?` de ajuda).
+- Ao tocar em **“Entendi, vamos lá”**, segunda etapa: *“Deseja que esta mensagem de boas-vindas não apareça novamente?”*
+  - **Sim, não mostrar novamente** → `localStorage.mutirao.onboarded = "1"`; não reexibe.
+  - **Não, continuar mostrando** → fecha sem gravar; reaparece na próxima visita.
+- `modal(..., opts)` com `hideClose`, `lockScrim`, `hint`; corpo em `#modalBody` para transição suave entre etapas.
+- Ajuda (`?`) permanece disponível em qualquer momento.
+
+### Notes
+- Clique no scrim bloqueado durante o onboarding; botões desabilitados após escolha (anti double-click).
+
+---
+
+## [1.11.1] — Temas: claro padrão + escuro refinado — 2026-11-14
+
+### Changed
+- **Tema claro é o padrão** para novos usuários (`data-theme="light"` no bootstrap do `index.html`).
+- Escuro **somente** com `data-theme="dark"` (preferência salva em `mutirao.theme`); não herda mais `prefers-color-scheme` como padrão silencioso.
+- `isDark()` simplificado: retorna verdadeiro apenas se `dataset.theme === "dark"`.
+- Paleta escura recalibrada (superfícies em camadas, texto de alto contraste, primary `#8FB0FF`, accent suavizado).
+- Controles Leaflet no escuro alinhados a `data-theme` (sem media query de sistema).
+
+### Files
+- `src/css/tokens/design-tokens.css`
+- `src/css/map/layers.css` (atribuição / zoom)
+- `index.html` (script de bootstrap)
+- `runtime.js` (`isDark` / `toggleTheme`)
+
+---
+
+## [1.11.0] — Usabilidade (toasts de sucesso, ranking, formulário, fontes, menu) — 2026-11-14
+
+### Added
+- Toast + banner **“Problema registrado com sucesso!”** após `submitAdd`.
+- Card **“Menu principal (sempre à mão)”** na home do mapa com atalhos Ranking / Votação / Conta.
+- Botão **“Votar neste problema”** em cada item do ranking (abre votação do mês na RPA do ponto).
+- Formulário de ponto: dicas de detalhe (tamanho, tempo, risco), **Limpar textos**, botão **Publicar no mapa**.
+- Onboarding inicial (depois evoluído em 1.11.2).
+- Tipografia base 17px; botões/labels reforçados.
+
+### Fixed
+- “X” duplicados em painéis (sheet-bar vs cabeçalho interno).
+- `mobile-lock.css`: tiles/SVG Leaflet **isentos** de `max-width: 100%` (corrige “mapa gigante” sob a máscara no mobile).
+
+---
+
+## [1.10.2] — Mobile-lock e painéis laterais — 2026-11-13
+
+### Fixed
+- Painel desktop alargado (`min(560px, 48vw)`, teto 600px).
+- `mobile-lock.css` como **último** CSS da cascata (`max-width: 959.98px`) impede herança de larguras desktop no mobile.
+- Legenda: chevron substituído por ícone **X** de fechar.
+
+### Docs
+- `RESPONSIVE.md`, diagramas e fluxos atualizados.
+
+---
+
+## [1.10.1] — UI/UX: chrome de navegação e ajuda contextual — 2026-11-13
+
+### Added
+- `modules/ui/help.js`: dicionário `HELP`, `sheetBar(view)` (Voltar / ? / Fechar), `openHelp` / `closeHelp`.
+- Histórico de navegação (`hist`, `goBack`, `closeToMap`).
+- Hash de rotas Fase 1 (`panico:ID`, `obra:ID`).
+
+### Fixed
+- Painel de detalhe com scroll e altura segura no mobile.
+- Lacunas Fase 1: bairro no login, `pickCancel` / `_returnTo`, `respLida`.
+
+---
+
+## [1.10.0] — Modularização runtime + toasts canônicos — 2026-11-12/13
+
+### Changed
+- Entrada ES module: `main.js` → `createApp` → `installRuntime`.
+- Toasts: `toastGen`, timers canceláveis, fallback 220ms sob `prefers-reduced-motion`.
+- Views registradas em `src/js/views/*`; HTML de tela ainda centralizado no runtime IIFE.
+
+---
+
 # CHANGELOG — Mutirão · Recife
+
+## [1.10.2] — Trava de responsividade mobile — 2026-11-13
+
+### Fixed
+- **Painéis no celular.** A largura ampliada do desktop (`min(560px, 48vw)`, até 600px, fixa em 560px a partir de 1250px) permanece **somente** em `@media (min-width: 960px)`.
+- Abaixo de 960px, `layout/mobile-lock.css` (último `@import` de `app.css`) força painel e mapa a `width: 100%`, `min-width: 0`, `max-width: 100%`.
+- **Causa estrutural:** `responsive-fix.css` era importado antes de `components/ui.css`. A grade `.stats { repeat(3, 1fr) }`, a galeria (`.ph-item { flex: 0 0 220px }`) e o `min-width: auto` de itens de grid/flex voltavam a impor o min-content e empurravam a janela para fora da viewport. Corrigir só no `responsive-fix` não bastava: a cascata posterior ganhava.
+- Tabbar de 5 colunas usa `minmax(0, 1fr)` e a pílula ativa não passa de 64px no mobile, para não alargar o documento.
+- Botões no mobile: `white-space: normal` (o UA de `button` é `nowrap`).
+
+### Unchanged (desktop)
+- Nenhuma regra de `mobile-lock.css` vale em `min-width: 960px`.
+- Painel esquerdo, mapa deslocado e toast desktop permanecem os da 1.10.1.
+
+---
+
+## [1.10.1] — Painel desktop mais largo e legenda com X — 2026-11-13
+
+### Changed
+- Painel desktop: `width: min(560px, 48vw)`; `min-width: min(420px, 100%)`; `max-width: 600px`.
+- A partir de 1250px: painel e `mapwrap.left` fixos em **560px**.
+- Legenda: chevron `#i-chev` substituído por `#i-close` (classe `.legend-close`).
+
+### Note
+- O registro 1.10.0 abaixo cita `min(440px, 42vw)`. Esse valor foi intermediário e **não** é o da árvore atual.
+
+---
 
 ## [1.10.0] — Auditoria UI/UX, responsividade e acessibilidade — 2026-11-13
 

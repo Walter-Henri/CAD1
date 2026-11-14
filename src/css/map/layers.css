@@ -207,17 +207,13 @@
 
 /* .mapwrap usa position:absolute;inset:0 definido no bloco de layout — não sobrescrever aqui */
 
-/* dark mode adjustments — separados para CSS válido */
+/* Tema escuro — controles do mapa (só cores via tokens / data-theme) */
 [data-theme="dark"] .leaflet-control-zoom a {
   background:var(--surface)!important; color:var(--ink)!important;
 }
-@media (prefers-color-scheme:dark) {
-  :root:not([data-theme="light"]) .leaflet-control-zoom a {
-    background:var(--surface)!important; color:var(--ink)!important;
-  }
-  :root:not([data-theme="light"]) .leaflet-control-attribution {
-    background:rgba(11,17,34,.82)!important;
-  }
+[data-theme="dark"] .leaflet-control-attribution {
+  background:rgba(10,15,28,.88)!important;
+  color:var(--ink-2)!important;
 }
 
 /* ── prefers-reduced-motion ─────────────────────────────── */

@@ -1,106 +1,63 @@
-# Design System — Mutirão · Recife
+# Design System — Mutirão · Recife (1.11.2)
 
-**Fonte canônica:** [`src/css/tokens/design-tokens.css`](../src/css/tokens/design-tokens.css)
+Fonte canônica de tokens: [`src/css/tokens/design-tokens.css`](../src/css/tokens/design-tokens.css).
 
-Qualquer mudança de marca (cores, tipografia base, raios, sombra, tema escuro) deve começar neste arquivo.
+## Temas
 
----
+| Tema | Ativação | Observação |
+|------|----------|------------|
+| **Claro** | Padrão (`data-theme="light"`) | Bootstrap no `index.html` se não houver `mutirao.theme` |
+| **Escuro** | `data-theme="dark"` + `localStorage.mutirao.theme=dark` | Não segue mais o SO como padrão silencioso |
 
-## Tokens
+Toggle: botão sol/lua no topo (`toggleTheme` / `isDark`).
 
-### Tipografia
+### Claro (resumo)
 
-| Token | Valor |
-|---|---|
-| `--font` | Nunito, system UI rounded |
+- Fundos: `--bg #EEF2F9`, `--surface #FFFFFF`, `--surface-2 #E8EEF8`
+- Texto: `--ink #0B1220`, `--ink-2 #3D4A5C`
+- Primária: `--primary #1E3A8A`
+- Destaque: `--accent #FFD400` (amarelo Mutirão)
 
-Pesos usados no produto: 600–900 (Google Fonts no `index.html`).
+### Escuro (resumo)
 
-### Cores — tema claro (`:root`)
+- Fundos em camadas: `#0A0F1C` → `#141C2E` → `#1C2740`
+- Texto alto contraste: `#F5F7FC` / `#B8C2D6`
+- Primária legível: `#8FB0FF`
+- Accent levemente suavizado: `#F5D000`
 
-| Token | Hex | Papel |
-|---|---|---|
-| `--bg` | `#F3F5FC` | Fundo da app |
-| `--surface` | `#FFFFFF` | Cartões, painel |
-| `--surface-2` | `#EAEFFA` | Hover / secundário |
-| `--ink` | `#0B0B0F` | Texto principal |
-| `--ink-2` | `#3F3F46` | Texto secundário |
-| `--line` / `--line-soft` | cinzas | Bordas |
-| `--primary` | `#1E3A8A` | Ações primárias / topbar |
-| `--accent` | `#FFD400` | Destaque / FAB adicionar |
-| `--ok` / `--warn` / `--err` | verde / âmbar / vermelho | Feedback |
-| `--sea` / `--land` / `--morro` | mapa | Água, terra, encostas |
+## Tipografia
 
-### Cores — tema escuro
+- Família: Nunito / system-ui (`--font`)
+- Corpo: **17px** (1.11.0+)
+- Títulos de painel: ~28px; detalhe ~24px
+- Botões: 17px, peso 800; altura mínima 52px
 
-Definidas em:
+## Componentes visuais
 
-1. `@media (prefers-color-scheme: dark)` com `:root:not([data-theme="light"])`  
-2. `:root[data-theme="dark"]`  
+| Classe | Papel |
+|--------|-------|
+| `.btn` / `.btn.acc` / `.btn.sec` / `.btn.ghost` | Ações primárias, secundárias, terciárias |
+| `.card` | Superfície elevada |
+| `.sheet-bar` | Chrome Voltar / ? / Fechar |
+| `.toast` | Feedback temporário |
+| `.modal` + `.scrim` | Diálogos |
+| `.nav-hint-card` | Atalhos de menu na home |
+| `.success-banner` | Confirmação pós-envio |
+| `.onboard-steps` | Lista numerada do onboarding |
+| `.fab` | Ações flutuantes no mapa (rótulos visíveis) |
+| `.tabbar` | Navegação inferior mobile |
 
-O JS grava `data-theme` em `document.documentElement` e `localStorage['mutirao.theme']`.
+## Ícones
 
-### Forma
+Sprite SVG em `index.html` (`#i-*`). Helper `icon(name, cls)` em `core/util.js` / `lib/dom.js`.
 
-| Token | Uso |
-|---|---|
-| `--r-sm` 10px | Chips, pequenos controles |
-| `--r` 16px | Cards, inputs |
-| `--r-lg` 22px | Folhas / painéis |
-| `--shadow` | Elevação padrão |
+## Mapa
 
-### Breakpoint
+- `--sea`, `--land`, `--morro`, máscara `.world-mask`
+- Controles zoom/atribuição respeitam tokens no tema escuro
 
-| Nome | Valor | Onde |
-|---|---|---|
-| Desktop shell | `960px` | `layout/shell.css` (tabbar some, topnav aparece) |
-| Pickbar | `768px` / `767px` | `components/pickbar.css` |
+## Regras ao alterar cores
 
-Token informativo: `--bp-desktop: 960px` (documentação; media queries ainda usam literais para compatibilidade).
-
----
-
-## Arquivos CSS por papel
-
-| Arquivo | Responsabilidade |
-|---|---|
-| `tokens/design-tokens.css` | Variáveis e temas |
-| `base/reset.css` | html/body, ícones, focus |
-| `base/animations.css` | `@keyframes`, microinterações |
-| `layout/shell.css` | Topbar, app, panel, mapwrap, tabbar |
-| `components/ui.css` | Botões, forms, cards, ranking, detalhe, conta |
-| `components/overlays.css` | Modal, toast, SV, galeria |
-| `components/pickbar.css` | Fluxo de escolha de local |
-| `map/chrome.css` | FAB, menu, legenda |
-| `map/markers.css` | Pins de problema |
-| `map/layers.css` | Polígonos, clusters, riscos, Leaflet |
-| `features/fase1.css` | Pânico, obras, tabbar 5 colunas |
-| `vendor.css` | Leaflet + MarkerCluster (terceiros) |
-| `app.css` | Apenas `@import` na ordem da cascata |
-
-```mermaid
-flowchart TB
-  DS[design-tokens.css] --> ALL[Demais módulos usam var(--*)]
-  ALL --> UI[Componentes]
-  ALL --> MAP[Mapa]
-  ALL --> F1[Fase 1]
-```
-
----
-
-## Como reestilizar com segurança
-
-1. Alterar só tokens para rebrand.  
-2. Se precisar de exceção por componente, editar o arquivo do domínio — não copiar cores literais novas em cinco arquivos.  
-3. Preferir `var(--primary)` a `#1E3A8A` espalhado (legado no topbar ainda usa hex fixo por contraste garantido sobre azul).  
-4. Testar tema claro, escuro e `prefers-reduced-motion`.  
-5. Nunca sobrescrever `.mapwrap { position:absolute; inset:0 }`.
-
-
-## Layout responsivo (1.10)
-
-- Breakpoints: 380px (estreito), 600px (tablet), 960px (desktop).
-- Painel desktop: `min(440px, 42vw)`, máximo 480px.
-- Mobile fullscreen: `display:flex; flex-direction:column; overflow-x:hidden`.
-- Toque mínimo: 44×44px em botões e ícones de ação.
-- Módulo: `src/css/layout/responsive-fix.css`.
+1. Mudar **somente** `design-tokens.css` (e trechos explicitamente temáticos em `map/layers.css`).
+2. Não hardcodar hex em views salvo exceções de marca (ex.: pino amarelo do pick).
+3. Validar contraste de texto/botão nos dois temas.

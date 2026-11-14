@@ -95,15 +95,32 @@ Pânico ativo: `zIndexOffset: 900`, some se `pSt==='resolvido'`.
 3. **Obras:** aba Obras → Registrar → status por datas → atualizar / declarar / verificar.  
 4. **Mensagens:** Conta → Mensagens → enviar; Conta → Painel do líder → responder (filtro por bairro ainda limitado).  
 
-## Limitações restantes
+## Limitações — o que era aberto e o que a 1.9–1.10.2 fechou
 
-| Limitação | Impacto |
+A tabela antiga descrevia o código **antes** da rodada 1.9. Ela permanece como histórico. A coluna Status é o código em `install/runtime.js` hoje.
+
+| Limitação registrada | Status em 1.10.2 |
 |---|---|
-| Sem `S.user.bairro` no login | Mensagem e painel do líder não alinham bairro |
-| Hash F1 → `#mapa` | Reload não restaura a tela |
-| `pickCancel` ignora `_returnTo` | Cancelar pick no meio do fluxo de pânico/obra |
-| `respLida` fixo | Aviso de resposta nova não some |
-| `pSt: nao_verificado` | Só rótulo; ninguém grava |
-| localStorage only | Sem sync entre aparelhos |
-| Sem foto em pânico/obra | Escopo Fase 2 |
-| Nominatim sem retry | Falha silenciosa possível |
+| Sem `S.user.bairro` no login | **Resolvido.** `#lgBairro` obrigatório; `doLogin` grava `bairro` e `role: 'morador'`. |
+| Hash F1 → `#mapa` | **Resolvido.** `HASH_VIEWS` + `#panico:<id>` + `#obra:<id>`. |
+| `pickCancel` ignora `_returnTo` | **Resolvido.** Cancelar volta a `panicoAdd` / `obraAdd` quando o draft pede. |
+| `respLida` fixo | **Resolvido.** Abrir Mensagens marca lidas; resposta nova zera o flag. |
+| `pSt: nao_verificado` | **Aberto.** Continua rótulo; o fluxo principal não grava esse estado. |
+| localStorage only | **Aberto.** Sem sync entre aparelhos. |
+| Sem foto em pânico/obra | **Aberto.** Fora desta entrega. |
+| Nominatim sem retry | **Aberto.** Falha de rede não refaz o pedido. |
+
+Filtro do líder: `m.bairro === S.user.bairro`. Sem bairro no usuário, a lista do líder fica vazia de propósito.
+
+Layout mobile das telas F1: `mobile-lock.css` (ver `DEVELOPMENT/RESPONSIVE.md`). Desktop não usa essa trava.
+
+
+
+## Lacunas fechadas (1.10.1+)
+
+| Item | Status |
+|------|--------|
+| `S.user.bairro` no login | Fechado |
+| Hash `panico:ID` / `obra:ID` | Fechado |
+| `pickCancel` respeita `_returnTo` | Fechado |
+| `respLida` em mensagens | Fechado |

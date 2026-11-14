@@ -1,5 +1,33 @@
 # Relatório de Bugs Corrigidos — Mutirão · Recife
 
+## BUG-018 · ALTO — Painel largo do desktop estoura o celular
+
+**Status:** CORRIGIDO (1.10.2) | **Arquivos:** `src/css/layout/mobile-lock.css`, `src/css/app.css`
+
+**Sintoma:** depois de ampliar a janela esquerda no desktop (~560px), no smartphone as mesmas janelas ultrapassavam a largura da tela: corte, desalinhamento e rolagem horizontal.
+
+**Causa (não era o media query de 960px em si):**
+
+1. `shell.css` e `responsive-fix.css` aplicam `width: min(560px, 48vw)` apenas em `min-width: 960px`. Isso está correto e foi preservado.
+2. `app.css` importa `responsive-fix.css` **antes** de `components/ui.css` e `features/fase1.css`.
+3. `ui.css` redefine `.stats` como `repeat(3, 1fr)`. Em CSS Grid, `1fr` implica `min-width: auto` = min-content. Rótulos longos ("pontos marcados", "esperando solução") e botões com `white-space: nowrap` (folha do user agent) impedem a coluna de encolher.
+4. `.gallery` / `.ph-item { flex: 0 0 220px }` como filho de `.pin-inner` (`display: grid`) também contribui com min-content alto se o ancestral não tiver `min-width: 0`.
+5. A tabbar da Fase 1 tem 5 colunas e a pílula ativa mede 72px; com `minmax(auto, 1fr)` o item mínimo segue o conteúdo e pode alargar o documento em viewports ~320px.
+
+**Correção:** folha final `mobile-lock.css`, exclusiva de `max-width: 959.98px`, com `width/min-width/max-width` explícitos no `.panel` e no `.mapwrap`, `minmax(0, 1fr)` em stats e tabbar, `min-width: 0` nos filhos de `.pin-inner`, e `white-space: normal` nos botões. Desktop intocado.
+
+**Critério de aceitação:** em 360×640 e 390×844 o painel de Conta, Detalhe, Ranking, Votação, Adicionar e todas as views F1 cabem na largura; em ≥960px a coluna continua ~560px.
+
+---
+
+## BUG-017 · BAIXO — Legenda com chevron pouco claro
+
+**Status:** CORRIGIDO (1.10.1) | **Arquivos:** `index.html`, `css/map/chrome.css`
+
+O `<summary>` usava `#i-chev` rotacionado. Passou a `#i-close` (classe `.legend-close`). Abrir/fechar continua sendo o `<details id="legend">`.
+
+---
+
 ## BUG-015 · ALTO — Conteúdo cortado / overflow na Conta e painéis
 
 **Status:** ✅ CORRIGIDO (1.10.0) | **Arquivos:** `runtime.js` (vConta), `layout/responsive-fix.css`

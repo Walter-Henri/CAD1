@@ -50,3 +50,39 @@ Data: 2026-11-13
 - Validar contraste fino no tema escuro em monitores de baixo brilho.
 - Tabbar com 5 itens em aparelhos muito estreitos (rótulos curtos já em 10px).
 - Fotos do usuário em base64 podem pesar o scroll em aparelhos antigos.
+
+## Adendo 1.10.1 — largura desktop e legenda
+
+- Painel desktop passou de `min(440px, 42vw)` para `min(560px, 48vw)` (máx. 600px; 560px fixos ≥1250px). Esse é o visual aprovado no computador. A linha “≥960px: painel min(440px, 42vw)” acima é o registro da 1.10.0, superado.
+- Legenda: ícone X (`.legend-close` / `#i-close`) no lugar do chevron.
+
+## Adendo 1.10.2 — o desktop largo vazou para o celular
+
+**Sintoma:** as janelas que no desktop ficam à esquerda passavam da borda do smartphone.
+
+**Causa:** não foi reduzir o media query. `ui.css` carrega depois de `responsive-fix.css` e restaura min-content (`.stats` com `1fr`, galeria com base 220px, botão `nowrap`). Itens de grid com `min-width: auto` alargam o painel.
+
+**Correção:** `src/css/layout/mobile-lock.css` importado por último, só em `max-width: 959.98px`. Desktop não recebe essas regras.
+
+**Telas que precisam caber em 360px e 390px:** Conta, Detalhe, Ranking, Votação, Adicionar, Sucesso, Alertas, Pânico (lista, form, detalhe), Obras (lista, form, detalhe), Mensagens, Líder, modal de ajuda, menu, legenda, pickbar.
+
+**Aceite desktop:** em 1280px e 1440px a coluna continua a da 1.10.1. Se um ajuste mobile mudar essa coluna, a entrega está errada.
+
+
+---
+
+## Atualização 1.11.x (2026-11-14)
+
+| Achado usabilidade | Tratamento |
+|--------------------|------------|
+| Falta de feedback pós-envio | Toast + `.success-banner` na view sucesso |
+| Pouca didática / primeira visita | Onboarding 2 etapas + `?` contextual |
+| Menu pouco visível | `.nav-hint-card` + FABs rotulados + tabbar |
+| Ícones sem rótulo | Tab labels + `.fab-lbl` |
+| Fontes pequenas | Base 17px, títulos maiores |
+| Medo de errar no form | Texto de reasssurance + Limpar textos |
+| Guia de descrição | Placeholders de tamanho/tempo/risco |
+| Voto só em tela separada | “Votar neste problema” no ranking |
+| X inconsistente | Um chrome de fechar; onboarding sem X |
+
+Critérios de aceite: ver CHANGELOG 1.11.0–1.11.2.

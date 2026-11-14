@@ -1,32 +1,95 @@
 /* Design tokens — Mutirão · Recife
- * Único lugar para alterar identidade visual (cores, tipografia, raios, sombra).
- * Temas: claro (:root), escuro (prefers-color-scheme + data-theme="dark").
+ * Único lugar para identidade visual (cores, tipografia, raios, sombra).
+ * Tema padrão: CLARO (:root e data-theme="light").
+ * Tema escuro: somente data-theme="dark" (escolha do usuário).
+ * Não alterar layout, componentes ou lógica fora desta paleta.
  */
-:root{
+:root,
+:root[data-theme="light"]{
   --font:'Nunito',ui-rounded,'Segoe UI',system-ui,-apple-system,sans-serif;
-  --bg:#F3F5FC; --surface:#FFFFFF; --surface-2:#EAEFFA; --ink:#0B0B0F; --ink-2:#3F3F46;
-  --line:#71717A; --line-soft:#D6DCEA;
-  --primary:#1E3A8A; --primary-press:#172554; --on-primary:#FFFFFF; --primary-soft:#DCE4F7;
-  --accent:#FFD400; --accent-press:#E6BE00; --on-accent:#0B0B0F;
-  --ok:#166534; --ok-bg:#E3F3E8; --warn:#B45309; --warn-bg:#FDF0DF; --err:#B91C1C; --err-bg:#FCE9E9;
-  --sea:#C9DAEE; --land:#FBFAF5; --land-edge:#A9B5CF; --land-other:#E7E6E0; --morro:#F1E9C6;
-  --shadow:0 6px 24px rgba(16,30,70,.16);
+
+  /* Fundos e superfícies */
+  --bg:#EEF2F9;
+  --surface:#FFFFFF;
+  --surface-2:#E8EEF8;
+  --ink:#0B1220;
+  --ink-2:#3D4A5C;
+
+  /* Bordas */
+  --line:#5C6B7E;
+  --line-soft:#D0D8E6;
+
+  /* Primária (azul Mutirão) */
+  --primary:#1E3A8A;
+  --primary-press:#152A66;
+  --on-primary:#FFFFFF;
+  --primary-soft:#D9E3F7;
+
+  /* Destaque (amarelo) */
+  --accent:#FFD400;
+  --accent-press:#E6BE00;
+  --on-accent:#0B0B0F;
+
+  /* Feedback */
+  --ok:#166534;
+  --ok-bg:#E2F5EA;
+  --warn:#9A4B0C;
+  --warn-bg:#FDF1E0;
+  --err:#B91C1C;
+  --err-bg:#FCE8E8;
+
+  /* Mapa */
+  --sea:#C5D8EE;
+  --land:#FBFAF7;
+  --land-edge:#9AA8C2;
+  --land-other:#E6E5E0;
+  --morro:#F0E8C8;
+
+  --shadow:0 6px 24px rgba(16,30,70,.14);
   --r-sm:10px; --r:16px; --r-lg:22px;
   --bp-desktop:960px;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0B1122; --surface:#131B31; --surface-2:#1B2541; --ink:#F3F5FC; --ink-2:#C2C9D8;
-  --line:#8C95AA; --line-soft:#2B3656;
-  --primary:#A9C1FF; --primary-press:#C9D7FF; --on-primary:#0B1530; --primary-soft:#22305A;
-  --accent:#FFD400; --accent-press:#FFE04D; --on-accent:#0B0B0F;
-  --ok:#7EE0A2; --ok-bg:#163324; --warn:#FBBF5A; --warn-bg:#3A2A10; --err:#FF9C9C; --err-bg:#3D1A1E;
-  --sea:#09182E; --land:#1A2442; --land-edge:#3A4A78; --land-other:#121A2E; --morro:#2D3350;
-  --shadow:0 6px 24px rgba(0,0,0,.45); color-scheme:dark }}
+
+/* ESCURO — refinado: contraste alto, superfícies em camadas, menos brilho agressivo */
 :root[data-theme="dark"]{
-  --bg:#0B1122; --surface:#131B31; --surface-2:#1B2541; --ink:#F3F5FC; --ink-2:#C2C9D8;
-  --line:#8C95AA; --line-soft:#2B3656;
-  --primary:#A9C1FF; --primary-press:#C9D7FF; --on-primary:#0B1530; --primary-soft:#22305A;
-  --accent:#FFD400; --accent-press:#FFE04D; --on-accent:#0B0B0F;
-  --ok:#7EE0A2; --ok-bg:#163324; --warn:#FBBF5A; --warn-bg:#3A2A10; --err:#FF9C9C; --err-bg:#3D1A1E;
-  --sea:#09182E; --land:#1A2442; --land-edge:#3A4A78; --land-other:#121A2E; --morro:#2D3350;
-  --shadow:0 6px 24px rgba(0,0,0,.45); color-scheme:dark }
+  --font:'Nunito',ui-rounded,'Segoe UI',system-ui,-apple-system,sans-serif;
+
+  --bg:#0A0F1C;
+  --surface:#141C2E;
+  --surface-2:#1C2740;
+  --ink:#F5F7FC;
+  --ink-2:#B8C2D6;
+
+  --line:#8B97B0;
+  --line-soft:#2A3550;
+
+  /* Azul legível em fundo escuro (não perde a identidade) */
+  --primary:#8FB0FF;
+  --primary-press:#B4C9FF;
+  --on-primary:#0A1224;
+  --primary-soft:#1A2748;
+
+  /* Amarelo de destaque um pouco menos saturado no escuro (conforto) */
+  --accent:#F5D000;
+  --accent-press:#FFE566;
+  --on-accent:#0B0B0F;
+
+  --ok:#6BCF8E;
+  --ok-bg:#123024;
+  --warn:#E0A84A;
+  --warn-bg:#2E2410;
+  --err:#F09090;
+  --err-bg:#3A181C;
+
+  --sea:#0C182C;
+  --land:#182338;
+  --land-edge:#3E4F72;
+  --land-other:#121A2C;
+  --morro:#2A3148;
+
+  --shadow:0 8px 28px rgba(0,0,0,.55);
+  --r-sm:10px; --r:16px; --r-lg:22px;
+  --bp-desktop:960px;
+  color-scheme:dark;
+}

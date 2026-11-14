@@ -36,3 +36,9 @@
 
 - Arquivos CSS presentes; cadeia de import revisada.  
 - Browser E2E visual **não** automatizado neste ambiente — recomenda-se smoke manual (mapa + toast + uma view F1).
+
+---
+
+## Continuação pós-reestruturação
+
+A partir de **1.10**, o histórico unificado está em [`DEVELOPMENT/CHANGELOG.md`](DEVELOPMENT/CHANGELOG.md) (inclui 1.10.x UI/UX, 1.11.x usabilidade, temas e onboarding).

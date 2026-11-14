@@ -1,76 +1,46 @@
-# Arquitetura — Mutirão · Recife
+# Visão geral do sistema — Mutirão · Recife (1.11.2)
 
-Conferido em 2026-11-12. Detalhe F1: [`../FASE1.md`](../FASE1.md). JS: [`../../src/js/STRUCTURE.md`](../../src/js/STRUCTURE.md).
+## Propósito
 
-## Camadas
+Protótipo front-end de mapa cidadão para Recife: moradores registram problemas urbanos, apoiam pontos existentes e participam da votação mensal que orienta a associação de moradores.
 
-```
-NAVEGADOR
-  topbar · #panel · mapwrap (Leaflet) · tabbar (5 colunas mobile)
-  pickbar · #layer (modal / Street View)
+## Princípios
 
-              ↓
-  Scripts clássicos
-  core (util, constants, toast) → services → views (registry) → app.js IIFE
+1. **Sem backend** — estado em `localStorage`; dados geográficos e seed em JS estático.
+2. **Ver livre, agir com conta** — mapa e ranking públicos; mutações sensíveis passam por `need()`.
+3. **Mobile-first com desktop reforçado** — tabbar no mobile; painel lateral largo no desktop (≥960px).
+4. **Tema claro padrão** — escuro só por escolha explícita do usuário.
+5. **Acessibilidade prática** — alvos ≥44px, `?` de ajuda, onboarding, tipografia legível.
 
-  app.js
-  ┌─────────────┬──────────────┬─────────────────┐
-  │ go / NAVOF  │ renderPanel  │ map + layers    │
-  │ transPanel  │ bindPanel    │ world mask      │
-  │             │ bindNewFeatures              │
-  └─────────────┴──────────────┴─────────────────┘
-  ┌─────────────┬──────────────┬─────────────────┐
-  │ GPS/Nominatim│ choropleth  │ S + localStorage│
-  └─────────────┴──────────────┴─────────────────┘
-  Fase 1: panics, obras, messages · pgLayer · ogLayer
+## Arquitetura lógica
 
-  Globais data: BAIRROS · VIZINHOS · SEED · RISCOS · ENV
-  Namespace: window.Mutirao (toast, util, constants, services)
-```
+| Camada | Responsabilidade | Arquivos-chave |
+|--------|------------------|----------------|
+| Shell | HTML, sprite SVG, tabbar, maptools | `index.html` |
+| Estilo | Tokens, layout, mapa, UI, mobile-lock | `src/css/**` |
+| Boot | ES module entry | `modules/main.js`, `createApp.js` |
+| Runtime | Mapa Leaflet, estado `S`, views, binds | `install/runtime.js` (~1500 linhas) |
+| UI auxiliar | Toast, ajuda, sheet-bar | `ui/toast.js`, `ui/help.js` |
+| Dados | GeoJSON bairros/vizinhos, seed, riscos | `data/*.js` |
+| Serviços | Nominatim, GPS, share | `services/*.js` |
 
-## Toast
+## Ciclo de vida
 
-```
-toast(msg, ic)
-  → Mutirao.toast (core/toast.js)
-  → gen++ ; clear timers
-  → show 3,1s → toast-out + fallback 220ms
-  → hidden (só se gen atual)
-```
+1. Bootstrap de tema (`light` se não houver `mutirao.theme`).
+2. Scripts clássicos (data + core) e módulo `main.js`.
+3. `createApp()` monta o bag da aplicação; `installRuntime` registra mapa, handlers e `boot`.
+4. `boot()`: legenda, markers, hash/rota, `maybeOnboard()`.
+5. Interação: `go` / `renderPanel` / `bindPanel` / `sheetBar`.
 
-## Bind do painel
+## Fronteiras
 
-```
-transPanel(html)
-  → bindPanel()
-       → listeners base + Conta
-       → bindNewFeatures(S.view, on)   // F1
-```
+- **Não** autentica em servidor.
+- **Não** envia ocorrências à prefeitura automaticamente.
+- Integrações externas são somente leitura (tiles, geocode) ou links (WhatsApp, Street View).
 
-## Fluxos resumidos
+## Documentos relacionados
 
-**Ponto comum:** `startAdd` → pick → adicionar → `submitAdd` → markers + panico/obra markers  
-
-**Pânico:** FAB → panicoAdd → pick (`_returnTo`) → saveP → markers  
-
-**Obra:** obras → obraAdd → saveO → status via `computeObraStatus`  
-
-**Líder:** Conta → goLider (role) → vLider (msgs do bairro + obras)  
-
-## Painel por viewport
-
-| Viewport | Comportamento |
-|---|---|
-| ≥ 960px | Painel 420px; tabbar oculta; topnav sem Alertas/Obras (menu/Conta) |
-| &lt; 960px | Tela cheia para ranking, votação, conta, adicionar, sucesso **e** todas as views F1 |
-
-## Scripts (ordem obrigatória)
-
-```
-leaflet → markercluster
-→ bairros → vizinhos → seed → riscos → env
-→ core/util → constants → toast
-→ services/geocode → gps → share
-→ views/*
-→ app.js
-```
+- [DIAGRAMS.md](DIAGRAMS.md)
+- [DATA_AND_FLOWS.md](DATA_AND_FLOWS.md)
+- [../DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md)
+- [../DEVELOPMENT/CHANGELOG.md](../DEVELOPMENT/CHANGELOG.md)

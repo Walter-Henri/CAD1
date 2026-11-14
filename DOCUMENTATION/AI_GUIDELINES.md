@@ -1,4 +1,22 @@
-# AI Guidelines — Mutirão · Recife
+# Diretrizes para edição assistida por IA — Mutirão (1.11.2)
+
+Antes de qualquer mudança, leia `AI_CONTEXT_GUIDE.md` e o `CHANGELOG`.
+
+## Não negociável
+
+- Não alterar regras de negócio sem pedido explícito.
+- Mudanças **somente de cor/tema** limitam-se a `design-tokens.css` (e CSS de mapa temático).
+- Cascata CSS: `mobile-lock.css` permanece o último `@import` de layout em `app.css`.
+- Onboarding: duas etapas; sem X; persistência só em “Sim, não mostrar novamente”.
+- Toasts: API com `toastGen` e fallback temporal.
+
+## Preferências
+
+- Manter linguagem cidadã (pt-BR simples) em copy de UI.
+- Evitar duplicar botões Fechar (sheet-bar vs cabeçalho).
+- Documentar em `CHANGELOG.md` qualquer versão funcional nova.
+
+---
 
 Instruções para agentes de IA. Objetivo: **mudança local, tokens baixos, zero regressão acidental**.
 

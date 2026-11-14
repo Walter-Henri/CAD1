@@ -8,7 +8,7 @@
   <title>Mutirão · Recife</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231E3A8A'/%3E%3Cpath d='M8 16a8 8 0 1 0 16 0' stroke='%23FFD400' stroke-width='3' fill='none'/%3E%3C/svg%3E">
   <!-- Aplicar tema salvo antes do primeiro render para evitar flash -->
-  <script>try{var _t=localStorage.getItem('mutirao.theme');if(_t)document.documentElement.dataset.theme=_t;}catch(e){}</script>
+  <script>try{var _t=localStorage.getItem('mutirao.theme');document.documentElement.dataset.theme=(_t==='dark'||_t==='light')?_t:'light';}catch(e){document.documentElement.dataset.theme='light';</script>
   <!-- Estilos externos (Leaflet + app) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,9 +49,9 @@
         </div>
       </div>
       <div class="mtools-row">
-        <button class="fab add" id="btnAdd"><svg class="ic"><use href="#i-plus"/></svg>Adicionar ponto</button>
-        <button class="fab panico" id="btnPanico" aria-label="Registrar ocorrência de pânico"><svg class="ic"><use href="#i-siren"/></svg>PÂNICO</button>
-        <button class="fab more" id="btnMore" aria-haspopup="true" aria-expanded="false"><svg class="ic"><use href="#i-more"/></svg>Mais ações</button>
+        <button class="fab add" id="btnAdd" aria-label="Adicionar ponto no mapa"><svg class="ic"><use href="#i-plus"/></svg><span class="fab-lbl">Adicionar ponto</span></button>
+        <button class="fab panico" id="btnPanico" aria-label="Registrar perigo agora"><svg class="ic"><use href="#i-siren"/></svg><span class="fab-lbl">Perigo agora</span></button>
+        <button class="fab more" id="btnMore" aria-haspopup="true" aria-expanded="false" aria-label="Mais ações do mapa"><svg class="ic"><use href="#i-more"/></svg><span class="fab-lbl">Mais ações</span></button>
       </div>
     </div>
     <div class="menu" id="menu" hidden></div>

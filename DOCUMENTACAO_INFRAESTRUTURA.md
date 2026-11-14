@@ -1,3 +1,5 @@
+> Documento alinhado ao código **1.11.2** (novembro/2026). Detalhes de produto: `DOCUMENTATION/DEVELOPMENT/CHANGELOG.md`.
+
 # Documentação de Infraestrutura — Mutirão · Recife
 
 **Versão da doc:** 2026-11-12  
@@ -234,6 +236,9 @@ flowchart TB
 ```
 
 **Não reordenar** os `@import` em `app.css` sem revisar sobrescritas.
+
+Desde 1.10.2 o último import é `layout/mobile-lock.css`. Ele só existe para viewports < 960px. Qualquer módulo CSS novo entra **antes** dele. Detalhe: [`DOCUMENTATION/DEVELOPMENT/RESPONSIVE.md`](DOCUMENTATION/DEVELOPMENT/RESPONSIVE.md). A entrada JS vigente é `src/js/modules/main.js` (o `app.js` da árvore antiga não é carregado). Diagramas: [`DOCUMENTATION/ARCHITECTURE/DIAGRAMS.md`](DOCUMENTATION/ARCHITECTURE/DIAGRAMS.md).
+
 
 ---
 
