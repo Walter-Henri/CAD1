@@ -62,6 +62,9 @@
 }
 .pb-suggest li:last-child{border-bottom:0;}
 .pb-suggest li:hover{background:var(--surface-2);}
+.pb-suggest li small{color:var(--ink-2);margin-left:6px}
+.pb-suggest li.pb-msg{cursor:default;color:var(--ink-2);white-space:normal}
+.pb-suggest li.pb-msg:hover{background:none}
 
 /* location info */
 .pb-loc{padding:2px 2px 0;}

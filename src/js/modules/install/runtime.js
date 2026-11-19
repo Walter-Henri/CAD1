@@ -18,10 +18,14 @@ const S={
   filt:{cats:new Set(Object.keys(CATS)),st:new Set(Object.keys(STATUS))},
   view:'mapa', sel:null, area:'all', rankMode:'apoios', pending:null, draft:null, lastAdded:null, create:false
 };
+S.votePre=null; /* problema que já vem marcado na votação (vindo do ranking) */
+/* Salva no navegador. Retorna 'ok', 'semFotos' (salvou, mas faltou espaço para as fotos) ou false (nada foi salvo). */
 function save(){
-  const base={user:S.user,mine:S.mine,supported:[...S.supported],notes:S.notes,votes:S.votes,morro:S.morro};
-  try{localStorage.setItem(KEY,JSON.stringify({...base,photos:S.photos}))}
-  catch(e){try{localStorage.setItem(KEY,JSON.stringify(base))}catch(e2){}}
+  const base={user:S.user,supported:[...S.supported],notes:S.notes,votes:S.votes,morro:S.morro};
+  const put=o=>{try{localStorage.setItem(KEY,JSON.stringify(o));return true}catch(e){return false}};
+  if(put({...base,mine:S.mine,photos:S.photos}))return 'ok';
+  if(put({...base,mine:S.mine.map(p=>Object.assign({},p,{photos:[]}))}))return 'semFotos';
+  return false;
 }
 const seedPts=SEED.map(p=>Object.assign({},p,{seed:true}));
 const all=()=>seedPts.concat(S.mine);
@@ -227,7 +231,7 @@ function bairroAt(lat,lng){
 
 /* ---------- roteamento ---------- */
 const panel=$('#panel');
-const NAVOF={mapa:'mapa',detalhe:'mapa',pick:'mapa',adicionar:'mapa',sucesso:'mapa',ranking:'ranking',votacao:'votacao',conta:'conta',alertas:'alertas',panico:'alertas',panicoAdd:'alertas',panicoDetalhe:'alertas',mensagens:'alertas',lider:'alertas',obras:'obras',obraAdd:'obras',obraDetalhe:'obras'};
+const NAVOF={mapa:'mapa',detalhe:'mapa',pick:'mapa',adicionar:'mapa',sucesso:'mapa',ranking:'ranking',votacao:'votacao',conta:'conta',alertas:'alertas',panico:'alertas',panicoAdd:'alertas',panicoDetalhe:'alertas',mensagens:'alertas',lider:'alertas',obras:'alertas',obraAdd:'alertas',obraDetalhe:'alertas'};
 const hist=[];
 const HASH_VIEWS=new Set(['ranking','votacao','conta','adicionar','sucesso','alertas','panico','panicoAdd','mensagens','lider','obras','obraAdd']);
 function hashToken(v){
@@ -500,7 +504,7 @@ function vMapa(){
     <div class="stats"><div><b>${all().length}</b><span>pontos</span></div><div><b>${tot}</b><span>apoios</span></div><div><b>${sem}</b><span>esperando solução</span></div></div>
     <div class="nav-hint-card">
       <b>Menu principal (sempre à mão)</b>
-      <p class="sub2">No celular: barra de baixo com Mapa, Ranking, Alertas, Obras e Conta. No computador: menu no topo. No mapa: botões amarelo e vermelho no canto.</p>
+      <p class="sub2">No celular: barra de baixo com Mapa, Ranking, Votação, Alertas e Conta. No computador: menu no topo. No mapa: botões amarelo e vermelho no canto.</p>
       <div class="row">
         <button type="button" class="btn sec" data-go="ranking">${icon('rank','sm')}Ranking</button>
         <button type="button" class="btn sec" data-go="votacao">${icon('vote','sm')}Votação</button>
@@ -524,7 +528,7 @@ function vDetalhe(){
     <div class="dhead"><div style="flex:1;min-width:0;display:grid;gap:8px">
       <div class="kv">${catChip(p.c)}${stChip(p.s)}</div>
       <h2>${esc(p.t)}</h2>
-      <p class="sub2">${esc(p.b)} · RPA ${p.r} ${RPA[p.r]} · marcado há ${tempo(d)}</p></div></div>
+      <p class="sub2">${esc(p.b)} · Região ${RPA[p.r]} · marcado ${d<1?'hoje':'há '+tempo(d)}</p></div></div>
     <div>
       <div class="gallery-hd"><h3 class="sec" style="margin:0">${icon('camera','sm')}Fotos${ph.filter(x=>x.img).length?` <span class="badge-cnt">${ph.filter(x=>x.img).length}</span>`:''}</h3></div>
       <div class="gallery" aria-label="Fotos dos moradores">${ph.map(x=>`<figure class="ph-item" style="margin:0">${x.svg?`<div class="ph-ex">${x.svg}</div>`:`<img src="${x.img}" alt="Foto de morador" loading="lazy">`}<figcaption>${esc(x.cap)}</figcaption></figure>`).join('')}<button class="ph-add" id="dPhoto2">${icon('camera','lg')}Enviar foto</button></div></div>
@@ -559,7 +563,7 @@ function vDetalhe(){
 function areaSel(id){
   return `<div class="field"><label for="${id}">Região</label><select class="select" id="${id}">
     <option value="all"${S.area==='all'?' selected':''}>Todo o Recife</option>
-    ${Object.keys(RPA).map(k=>`<option value="${k}"${S.area===k?' selected':''}>RPA ${k} · ${RPA[k]}</option>`).join('')}</select></div>`;
+    ${Object.keys(RPA).map(k=>`<option value="${k}"${S.area===k?' selected':''}>Região ${RPA[k]}</option>`).join('')}</select></div>`;
 }
 const inArea=p=>S.area==='all'||String(p.r)===S.area;
 function vRanking(){
@@ -571,12 +575,16 @@ function vRanking(){
     <div class="seg" role="group" aria-label="Ordenar"><button aria-pressed="${S.rankMode==='apoios'}" data-rm="apoios">Mais apoiados</button><button aria-pressed="${S.rankMode==='tempo'}" data-rm="tempo">Mais tempo esperando</button></div>
     <ol class="list" style="list-style:none;margin:0;padding:0">${l.map((p,i)=>`<li class="rank${i<3&&S.rankMode==='apoios'?' top':''}"><span class="pos">${i+1}º</span>
       <div class="rank-vote-row">${listItem(p)}
-        <button type="button" class="btn sec btn-vote-quick" data-go-vote="${p.id}" data-area-r="${p.r}">${icon('vote','sm')} Votar neste problema</button>
+        ${voteOptsIn(String(p.r)).some(o=>o.id===p.id)
+          ?`<button type="button" class="btn sec btn-vote-quick" data-go-vote="${p.id}" data-area-r="${p.r}">${icon('vote','sm')} Votar neste problema</button>`
+          :`<p class="sub2 vote-off">${p.s==='vereador'?'Já foi levado ao vereador.':'Ainda fora da votação: entram os 3 mais apoiados da região.'}</p>`}
       </div></li>`).join('')||'<li class="note">Nenhum problema aberto nesta região.</li>'}</ol>
     <div class="sticky-cta"><button class="btn acc full" id="toVote">${icon('vote')}Ir para a votação do mês</button></div>
   </div>`;
 }
-function voteOpts(){return all().filter(p=>inArea(p)&&(p.s==='sem'||p.s==='paliativo'||p.s==='associacao')).sort((a,b)=>apoios(b)-apoios(a)).slice(0,3)}
+/* Os 3 problemas abertos mais apoiados de uma região entram na votação do mês */
+function voteOptsIn(area){return all().filter(p=>(area==='all'||String(p.r)===area)&&(p.s==='sem'||p.s==='paliativo'||p.s==='associacao')).sort((a,b)=>apoios(b)-apoios(a)).slice(0,3)}
+function voteOpts(){return voteOptsIn(S.area)}
 function vVotacao(){
   const opts=voteOpts(), mes=new Date().toLocaleDateString('pt-BR',{month:'long'}), voted=S.votes[S.area];
   let body;
@@ -587,9 +595,9 @@ function vVotacao(){
       <div class="card" style="display:grid;gap:14px">${opts.map((o,i)=>{const pc=Math.round(vs[i]*100/tot);return `<div class="res"><div class="top"><span>${esc(o.t)}${o.id===voted?' · seu voto':''}</span><span>${pc}%</span></div><span class="sub2">${esc(o.b)} · ${vs[i]} votos</span><div class="bar${o.id===voted?' me':''}"><i style="width:${pc}%"></i></div></div>`}).join('')}</div>
       <button class="btn ghost" id="reVote">Mudar meu voto</button>`;
   }else body=`<form id="voteForm" novalidate style="display:grid;gap:12px"><fieldset style="border:0;padding:0;margin:0;display:grid;gap:10px" class="field" id="voteField"><legend class="flabel" style="margin-bottom:8px">Escolher</legend>
-      ${opts.map((o,i)=>`<label class="opt"><input type="radio" name="vote" value="${o.id}"><span class="box"><span class="radio"></span><span><b>Opção ${i+1}: ${esc(o.t)}</b><br><small>${esc(o.b)} · ${apoios(o)} apoios · esperando há ${tempo(daysOf(o))}</small></span></span></label>`).join('')}
+      ${opts.map((o,i)=>`<label class="opt"><input type="radio" name="vote" value="${o.id}"${S.votePre===o.id?' checked':''}><span class="box"><span class="radio"></span><span><b>Opção ${i+1}: ${esc(o.t)}</b><br><small>${esc(o.b)} · ${apoios(o)} apoios · esperando há ${tempo(daysOf(o))}</small></span></span></label>`).join('')}
       <span class="ferr">${icon('alert','sm')}Escolha uma opção para votar.</span></fieldset>
-      <button class="btn acc full">${icon('check')}Escolher</button></form>`;
+      <button class="btn acc full">${icon('check')}Confirmar meu voto</button></form>`;
   return `<div class="pin-inner">
     <div class="ph"><span class="eyebrow">Votação de ${mes}</span><h2>Qual problema a associação leva ao vereador primeiro?</h2>
       <p>Um voto por pessoa em cada região. Entram os 3 mais apoiados do ranking.</p></div>
@@ -649,7 +657,7 @@ function vAdicionar(){
       <p class="sub2">Pode corrigir qualquer campo antes de enviar. Use Voltar se quiser parar.</p></div></div>
     <p class="form-reassure">${icon('check','sm')} Nada é enviado até você tocar em <b>Publicar no mapa</b>. Dá para limpar os textos e trocar o local.</p>
     <div class="card kv"><span class="cicon" style="width:44px;height:44px;border-radius:50%;background:var(--accent);color:#0B0B0F;display:grid;place-items:center;border:2px solid #0B0B0F">${icon('pin')}</span>
-      <div style="flex:1;min-width:0"><b>${esc(d.b)}</b><div class="sub2">Local aproximado · RPA ${d.r} ${RPA[d.r]||''}</div></div>
+      <div style="flex:1;min-width:0"><b>${esc(d.b)}</b><div class="sub2">Local aproximado · Região ${RPA[d.r]||''}</div></div>
       <button type="button" class="btn ghost" id="chgLoc">Trocar local</button></div>
     <fieldset class="field" id="fCat" style="border:0;padding:0;margin:0"><legend class="flabel" style="margin-bottom:8px">Que tipo de problema?</legend>
       <div class="cats">${Object.keys(CATS).map(k=>`<label class="choice"><input type="radio" name="cat" value="${k}"${d.c===k?' checked':''}><span>${icon(k,'lg')}${CATS[k].n}</span></label>`).join('')}</div>
@@ -711,13 +719,15 @@ function bindPanel(){
   on('noteCancel','click',()=>{$('#noteForm').hidden=true});
   on('noteForm','submit',e=>{e.preventDefault();const t=$('#noteTxt').value.trim(),f=$('#noteForm');if(!t){f.classList.add('err');$('#noteTxt').focus();return}
     (S.notes[p.id]=S.notes[p.id]||[]).push({x:t,t:Date.now()});save();renderPanel();toast('Nota publicada.','check')});
-  ['areaR','areaV'].forEach(id=>on(id,'change',e=>{S.area=e.target.value;renderPanel()}));
+  ['areaR','areaV'].forEach(id=>on(id,'change',e=>{S.area=e.target.value;S.votePre=null;renderPanel()}));
   panel.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>{S.rankMode=b.dataset.rm;renderPanel()}));
   on('toVote','click',()=>go('votacao'));
   on('reVote','click',()=>{delete S.votes[S.area];save();renderPanel()});
   on('voteForm','submit',e=>{e.preventDefault();const c=panel.querySelector('input[name=vote]:checked'),fs=$('#voteField');
     if(!c){fs.classList.add('err');return}fs.classList.remove('err');
-    const area=S.area,id=c.value;need(()=>{S.area=area;S.votes[area]=id;save();go('votacao');toast('Voto registrado.','check')},'votar')});
+    const area=S.area,id=c.value;need(()=>{S.area=area;S.votes[area]=id;S.votePre=null;
+      if(save()===false){delete S.votes[area];toast('Não deu para salvar o voto neste aparelho. Tente de novo.','alert');return}
+      go('votacao');toast('Voto registrado.','check')},'votar')});
   on('loginForm','submit',doLogin);
   on('lgToggle','click',()=>{S.create=!S.create;renderPanel()});
   on('goMsgs','click',()=>go('mensagens'));
@@ -734,8 +744,9 @@ function bindPanel(){
     e.stopPropagation();
     const rr=b.getAttribute('data-area-r');
     if(rr!=null && rr!=='') S.area=String(rr);
+    S.votePre=b.dataset.goVote;
     go('votacao');
-    toast('Na votação do mês, escolha o problema que mais importa.','check');
+    toast('O problema já vem marcado. Confirme o voto.','check');
   }));
   panel.querySelectorAll('[data-go]').forEach(b=>{
     if(b.closest('.tabbar')||b.closest('.topnav'))return;
@@ -819,7 +830,7 @@ async function geocodeSearch(q){
 function updatePick(){
   const c=map.getCenter(),b=bairroAt(c.lat,c.lng);
   const wh=$('#pickWhere');
-  if(wh)wh.innerHTML=b?`${icon('pin','sm')} ${esc(b.n)} · RPA ${b.r} ${RPA[b.r]}`:`<span style="color:var(--err)">${icon('alert','sm')} Fora do Recife</span>`;
+  if(wh)wh.innerHTML=b?`${icon('pin','sm')} ${esc(b.n)} · Região ${RPA[b.r]}`:`<span style="color:var(--err)">${icon('alert','sm')} Fora do Recife</span>`;
   const ok=$('#pickOk');if(ok)ok.disabled=!b;
   const co=$('#pickCoords');
   if(co)co.textContent=`${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
@@ -847,14 +858,35 @@ document.addEventListener('click',e=>{
 });
 
 /* Busca de endereço no modo pick */
-function showPickSuggest(results){
+/* Busca no modo "marcar local":
+   - enquanto digita: só bairros da lista local (sem internet, instantâneo);
+   - ruas: só quando a pessoa pede (Enter ou "Buscar rua"), porque o Nominatim
+     não permite autocompletar a cada letra. */
+function localBairros(q){
+  const n=norm(q);
+  return BAIRROS.features.map(f=>f.properties).filter(p=>norm(p.n).includes(n))
+    .sort((a,b)=>norm(a.n).indexOf(n)-norm(b.n).indexOf(n)).slice(0,5)
+    .map(p=>({lat:p.c[0],lng:p.c[1],label:p.n,sub:'bairro'}));
+}
+function showPickSuggest(items,q){
   const ul=$('#pickSuggest');if(!ul)return;
-  if(!results.length){ul.hidden=true;return;}
-  ul.innerHTML=results.map((r,i)=>`<li data-lat="${r.lat}" data-lng="${r.lon}" data-idx="${i}">${esc(r.display_name.split(',').slice(0,3).join(', '))}</li>`).join('');
+  const rua=q&&q.length>=3?`<li data-rua="${esc(q)}">${icon('search','sm')} Buscar rua: “${esc(q)}”</li>`:'';
+  if(!items.length&&!rua){ul.hidden=true;return;}
+  ul.innerHTML=items.map(r=>`<li data-lat="${r.lat}" data-lng="${r.lng}">${esc(r.label)}${r.sub?` <small>${esc(r.sub)}</small>`:''}</li>`).join('')+rua;
   ul.hidden=false;
+}
+async function buscarRua(q){
+  const ul=$('#pickSuggest');if(!ul)return;
+  ul.innerHTML='<li class="pb-msg">Buscando…</li>';ul.hidden=false;
+  const res=(await geocodeSearch(q)).map(r=>({lat:+r.lat,lng:+r.lon,label:r.display_name.split(',').slice(0,3).join(', ')}))
+    .filter(r=>recB.pad(.1).contains([r.lat,r.lng]));
+  if(!res.length){ul.innerHTML='<li class="pb-msg">Não achamos essa rua. Tente o nome do bairro ou arraste o mapa.</li>';return;}
+  showPickSuggest(res);
 }
 document.addEventListener('click',e=>{
   const li=e.target.closest('#pickSuggest li');if(!li)return;
+  if(li.dataset.rua!==undefined){buscarRua(li.dataset.rua);return;}
+  if(!li.dataset.lat)return;
   const lat=+li.dataset.lat,lng=+li.dataset.lng;
   map.flyTo([lat,lng],16,{animate:true,duration:0.6});
   $('#pickSuggest').hidden=true;
@@ -864,12 +896,13 @@ document.addEventListener('input',e=>{
   if(e.target.id!=='pickSearch')return;
   const q=e.target.value.trim();
   const cl=$('#pickSearchClear');if(cl)cl.hidden=!q;
-  clearTimeout(_srTimer);
-  if(q.length<3){$('#pickSuggest').hidden=true;return;}
-  _srTimer=setTimeout(async()=>{
-    const res=await geocodeSearch(q);
-    showPickSuggest(res);
-  },500);
+  if(q.length<2){$('#pickSuggest').hidden=true;return;}
+  showPickSuggest(localBairros(q),q);
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.id!=='pickSearch'||e.key!=='Enter')return;
+  e.preventDefault();
+  const q=e.target.value.trim();if(q.length>=3)buscarRua(q);
 });
 document.addEventListener('click',e=>{
   if(e.target.id==='pickSearchClear'){
@@ -889,10 +922,19 @@ function submitAdd(e){
   $('#fTitle').classList.toggle('err',!(d.t||'').trim());if(!(d.t||'').trim())ok=false;
   if(!ok){(panel.querySelector('.field.err input')||panel.querySelector('.field.err')).focus?.();panel.querySelector('.field.err').scrollIntoView({block:'center',behavior:'smooth'});return}
   const p={id:'u'+Date.now(),t:d.t.trim(),c:d.c,s:d.pal==='paliativo'?'paliativo':'sem',b:d.b,r:d.r,a:1,lat:d.lat,lng:d.lng,created:Date.now(),ref:(d.ref||'').trim(),desc:(d.desc||'').trim(),photos:d.photos||[]};
-  S.mine.push(p);save();S.draft=null;S.lastAdded=p.id;renderMarkers();
+  S.mine.push(p);
+  const salvo=save();
+  if(salvo===false){
+    /* nada foi gravado: não mostrar "sucesso" */
+    S.mine.pop();
+    toast('Não deu para salvar neste aparelho: o espaço do navegador acabou. Tente sem fotos.','alert');
+    return;
+  }
+  S.draft=null;S.lastAdded=p.id;renderMarkers();
   renderPanicoMarkers();
   renderObraMarkers();
-  toast('Problema registrado com sucesso!','check');
+  if(salvo==='ok')toast('Problema registrado com sucesso!','check');
+  else toast('Problema registrado, mas sem as fotos: o espaço do navegador acabou.','alert');
   go('sucesso');
   map.setView([p.lat,p.lng],Math.max(map.getZoom(),15));
 }
@@ -907,7 +949,9 @@ $('#fileIn').addEventListener('change',e=>{
       const k=Math.min(1,900/Math.max(img.width,img.height)),cv=document.createElement('canvas');cv.width=Math.round(img.width*k);cv.height=Math.round(img.height*k);
       cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);const url=cv.toDataURL('image/jpeg',.72);
       if(fileFor==='draft'){S.draft.photos=(S.draft.photos||[]).concat(url);renderPanel()}
-      else{(S.photos[fileFor]=S.photos[fileFor]||[]).push(url);save();renderPanel();toast('Foto enviada.','check')}};
+      else{const arr=(S.photos[fileFor]=S.photos[fileFor]||[]);arr.push(url);
+        if(save()!=='ok'){arr.pop();save();renderPanel();toast('Não deu para guardar a foto: o espaço do navegador acabou.','alert');return}
+        renderPanel();toast('Foto enviada.','check')}};
     img.onerror=()=>toast('Não deu para abrir a foto. Tente outra.','alert');img.src=rd.result};
   rd.readAsDataURL(f);
 });
@@ -921,7 +965,7 @@ function runSearch(inp){
   const ps=all().filter(p=>norm(p.t).includes(q)||norm(CATS[p.c].n).includes(q)).slice(0,5).map(p=>({k:'p',p}));
   suggItems=bs.concat(ps);
   suggBox=document.createElement('ul');suggBox.className='sugg';suggBox.setAttribute('role','listbox');
-  suggBox.innerHTML=suggItems.length?suggItems.map((s,i)=>`<li><button type="button" data-i="${i}">${s.k==='b'?icon('pin','sm')+esc(s.p.n)+`<small>bairro · RPA ${s.p.r}</small>`:icon(s.p.c,'sm')+esc(s.p.t)+`<small>${esc(s.p.b)}</small>`}</button></li>`).join('')
+  suggBox.innerHTML=suggItems.length?suggItems.map((s,i)=>`<li><button type="button" data-i="${i}">${s.k==='b'?icon('pin','sm')+esc(s.p.n)+`<small>bairro · Região ${RPA[s.p.r]||''}</small>`:icon(s.p.c,'sm')+esc(s.p.t)+`<small>${esc(s.p.b)}</small>`}</button></li>`).join('')
     :`<li class="note" style="margin:4px">Nada encontrado para “${esc(inp.value)}”. Tente o nome do bairro.</li>`;
   inp.closest('.search').appendChild(suggBox);
   suggBox.querySelectorAll('button').forEach(b=>b.addEventListener('mousedown',e=>{e.preventDefault();choose(+b.dataset.i,inp)}));
@@ -949,10 +993,7 @@ function choose(i,inp){
 /* ---------- menu, filtros, legenda ---------- */
 const menu=$('#menu'),btnMore=$('#btnMore');
 function closeMenu(){menu.hidden=true;btnMore.setAttribute('aria-expanded','false')}
-$('#btnPanico').addEventListener('click',()=>{
-  if(!S.user){toast('Faça login para registrar uma ocorrência de pânico','user');return;}
-  S.draft={};go('panicoAdd');
-});
+$('#btnPanico').addEventListener('click',()=>need(()=>{S.draft={};go('panicoAdd')},'registrar um perigo'));
 btnMore.addEventListener('click',e=>{
   e.stopPropagation();if(!menu.hidden){closeMenu();return}
   menu.innerHTML=`<div class="sheet-bar menu-bar">
@@ -1051,9 +1092,11 @@ const OBRA_ST={
 };
 
 const KEY_P='mutirao.panics',KEY_O='mutirao.obras',KEY_M='mutirao.msgs';
-S.panics  =JSON.parse(localStorage.getItem(KEY_P)||'[]');
-S.obras   =JSON.parse(localStorage.getItem(KEY_O)||'[]');
-S.messages=JSON.parse(localStorage.getItem(KEY_M)||'[]');
+/* Lê uma lista salva; se o dado estiver corrompido, começa vazio em vez de quebrar o site */
+const loadList=k=>{try{const v=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}};
+S.panics  =loadList(KEY_P);
+S.obras   =loadList(KEY_O);
+S.messages=loadList(KEY_M);
 S.selP=null;S.selO=null;
 if(S.user&&!S.user.role)S.user.role='morador';
 function saveP(){try{localStorage.setItem(KEY_P,JSON.stringify(S.panics))}catch(e){}}
@@ -1140,7 +1183,7 @@ function vPanicoAdd(){
       ${icon('alert','sm')}<p style="margin:0;font-size:.8rem;color:#991B1B;display:inline"><b>Em risco de vida?</b> Ligue agora: Bombeiros 193 · SAMU 192 · Defesa Civil 199</p>
     </div>
     <div class="card kv" style="margin-bottom:12px">
-      <div style="flex:1"><b>${esc(d.b||'Localização não selecionada')}</b><div class="sub2">Local da ocorrência · RPA ${d.r||'—'}</div></div>
+      <div style="flex:1"><b>${esc(d.b||'Localização não selecionada')}</b><div class="sub2">Local da ocorrência${d.r?' · Região '+RPA[d.r]:''}</div></div>
       <button type="button" class="btn ghost" id="pChgLoc">Alterar</button>
     </div>
     <div class="field"><label class="flabel">Título / descrição rápida <span style="color:var(--err)">*</span></label>
@@ -1450,7 +1493,7 @@ function maybeOnboard(){
       <li><span class="n">2</span><span><b>Contar um problema</b> — use o botão amarelo “Adicionar ponto” e marque o local.</span></li>
       <li><span class="n">3</span><span><b>Apoiar e votar</b> — no Ranking e na Votação do mês você ajuda a priorizar.</span></li>
     </ol>
-    <p class="note">${icon('users')}<span>No celular, o menu fica na barra de baixo: Mapa, Ranking, Alertas, Obras e Conta.</span></p>
+    <p class="note">${icon('users')}<span>No celular, o menu fica na barra de baixo: Mapa, Ranking, Votação, Alertas e Conta.</span></p>
     <button type="button" class="btn acc full" id="onboardOk">Entendi, vamos lá</button>`;
   const step2=`<h2 id="mt">Antes de continuar</h2>
     <p class="sub2" style="margin-bottom:8px">Deseja que esta mensagem de boas-vindas <b>não apareça novamente</b>?</p>
