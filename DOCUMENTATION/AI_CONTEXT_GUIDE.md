@@ -1,4 +1,4 @@
-# Guia de contexto para IA — Mutirão · Recife (1.11.3)
+# Guia de contexto para IA — Mutirão · Recife (1.11.x)
 
 > **Instrução de uso:** Use este arquivo antes de editar qualquer código, arquivo, estrutura ou documentação do projeto.
 
